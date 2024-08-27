@@ -2,8 +2,6 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from starlette import status
 from dotenv import load_dotenv
-from ..schemas.config import db_dependency
-from ..schemas.model import State
 import string
 import random
 import urllib.parse
@@ -18,11 +16,11 @@ user = APIRouter()
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
-redirect_uri = 'http://localhost:8000/callback'
+redirect_uri = 'http://localhost:8006/user/callback'
 
 
 @user.get("/login")
-def login(db: db_dependency):
+def login(request: Request):
     state = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
     params = {
         'state': state,
@@ -32,14 +30,14 @@ def login(db: db_dependency):
         'scope': 'user-read-private user-read-email user-library-read user-library-modify playlist-read-private playlist-modify-private',
 
     }
-    db.add(State(state=state))
-    db.commit()
+    request.session["state"] = state
+    print(request.session.get('state'))
     url = f'https://accounts.spotify.com/authorize?{urllib.parse.urlencode(params)}'
     return RedirectResponse(url)
 
 
 @user.get("/callback")
-def callback(request: Request, db: db_dependency):
+def callback(request: Request):
     code = request.query_params.get('code')
     state = request.query_params.get('state')
     error = request.query_params.get('error')
@@ -47,12 +45,10 @@ def callback(request: Request, db: db_dependency):
     if error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    db_state = db.query(State).filter(State.state == state).first()
-    if not db_state:
+    print(state)
+    valid_state = request.session.get('state')
+    if valid_state != state:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid State')
-
-    db.delete(db_state)
-    db.commit()
 
     token_request = requests.post(
         'https://accounts.spotify.com/api/token',
@@ -69,7 +65,32 @@ def callback(request: Request, db: db_dependency):
 
     if token_request.status_code == 200:
         token_info = token_request.json()
-        return {'access_token': token_info['access_token'], 'token_type': token_info['token_type']}
+        request.session["access_token"] = token_info['access_token']
+        return RedirectResponse(url='/dashboard')
     else:
         raise HTTPException(status_code=token_request.status_code, detail='failed to fetch access token')
 
+
+@user.get('/profile')
+def get_user(request: Request):
+    token = request.session.get('access_token')
+    if not token:
+        return RedirectResponse(url='/user/login')
+
+    user_info = requests.get(
+        'https://api.spotify.com/v1/me',
+        headers={
+            'Authorization': f'Bearer {token}'
+        }
+    )
+
+    if user_info.status_code == 200:
+        return user_info.json()
+    else:
+        raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
+
+
+@user.get('/logout')
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url='/user/login')
