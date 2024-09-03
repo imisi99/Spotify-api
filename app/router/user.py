@@ -16,7 +16,7 @@ user = APIRouter()
 
 client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
-redirect_uri = 'http://localhost:8006/user/callback'
+redirect_uri = os.getenv("REDIRECT_URI")
 
 
 @user.get("/login")
@@ -31,7 +31,6 @@ def login(request: Request):
 
     }
     request.session["state"] = state
-    print(request.session.get('state'))
     url = f'https://accounts.spotify.com/authorize?{urllib.parse.urlencode(params)}'
     return RedirectResponse(url)
 
@@ -45,7 +44,6 @@ def callback(request: Request):
     if error:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    print(state)
     valid_state = request.session.get('state')
     if valid_state != state:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid State')
@@ -93,4 +91,4 @@ def get_user(request: Request):
 @user.get('/logout')
 def logout(request: Request):
     request.session.clear()
-    return RedirectResponse(url='/user/login')
+    return RedirectResponse(url='/')

@@ -35,3 +35,9 @@ def read_root(request: Request):
 
 
 model.data.metadata.create_all(bind=engine)
+
+
+@app.get("/")
+def home():
+    return {"message": "Welcome to the Spotify API"}
+
