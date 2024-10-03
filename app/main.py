@@ -5,6 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from .schemas import model
 from .schemas.database import engine
 from .router.user import user
+from .router.play import play
 from dotenv import load_dotenv
 import os
 
@@ -23,6 +24,7 @@ app.add_middleware(
 Secret = os.getenv("SECRET")
 app.add_middleware(SessionMiddleware, secret_key=Secret)
 app.include_router(user, prefix="/user", tags=["User"])
+app.include_router(play, prefix="/play", tags=["Play"])
 
 
 @app.get("/dashboard")
