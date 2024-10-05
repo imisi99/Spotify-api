@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from starlette import status
 from dotenv import load_dotenv
+from  ..schemas.config import db_dependency, user_dependency
+from ..schemas.model import UserModel
 import string
 import random
 import urllib.parse
@@ -70,7 +72,9 @@ def callback(request: Request):
 
 
 @user.get('/profile')
-def get_user(request: Request):
+def get_user(request: Request, db: db_dependency, user: user_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
     token = request.session.get('access_token')
     if not token:
         return RedirectResponse(url='/user/login')
@@ -83,7 +87,30 @@ def get_user(request: Request):
     )
 
     if user_info.status_code == 200:
-        return user_info.json()
+        user_data = user_info.json()
+        email = user_data.get('email')
+        if email is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+
+        user_db = db.query(UserModel).filter(UserModel.email == email).first()
+        if user_db is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        if user_db.username != user_data.get('display_name'):
+            user_db.username = user_data.get('display_name')
+            db.add(user_db)
+            db.commit()
+
+        profile = {
+            'username': user_db.username,
+            'email': user_db.email,
+            'followers': user_db.followers,
+            'following': user_db.following,
+            'level': user_db.level,
+            'playlists': user_db.playlists
+
+        }
+
+        return profile
     else:
         raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
 
