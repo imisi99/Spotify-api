@@ -1,4 +1,6 @@
 import os
+
+from AltSchool.Orderapi.app.routers.user import algorithm
 from .database import begin
 from jose import JWTError, jwt
 from typing import Annotated
@@ -25,7 +27,7 @@ def authentication(user_id: int, username: str, limit):
     encode = {'sub': username, 'id': user_id}
     exp = datetime.utcnow() + limit
     encode.update({'exp': exp})
-    return jwt.encode(encode, secret, Algorithm)
+    return jwt.encode(encode, secret, algorithm=Algorithm)
 
 
 bearer = OAuth2PasswordBearer(tokenUrl='user/login')
