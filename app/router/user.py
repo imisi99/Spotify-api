@@ -81,8 +81,8 @@ def callback(request: Request, db: db_dependency):
             existing_user = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
             if not existing_user:
                 new_user = UserModel(
-                    username=token_info.get('display_name'),
-                    email=token_info.get('email')
+                    username=user_data.get('display_name'),
+                    email=user_data.get('email')
                 )
                 db.add(new_user)
                 db.commit()
