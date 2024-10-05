@@ -38,7 +38,7 @@ def login(request: Request):
 
 
 @user.get("/callback")
-def callback(request: Request):
+def callback(request: Request, db: db_dependency):
     code = request.query_params.get('code')
     state = request.query_params.get('state')
     error = request.query_params.get('error')
@@ -66,6 +66,29 @@ def callback(request: Request):
     if token_request.status_code == 200:
         token_info = token_request.json()
         request.session["access_token"] = token_info['access_token']
+
+        token = request.session.get('access_token')
+        user_info = requests.get(
+            'https://api.spotify.com/v1/me',
+            headers={
+                'Authorization': f'Bearer {token}'
+            }
+        )
+
+        if user_info.status_code == 200:
+            user_data = user_info.json()
+
+            existing_user = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
+            if not existing_user:
+                new_user = UserModel(
+                    username=token_info.get('display_name'),
+                    email=token_info.get('email')
+                )
+                db.add(new_user)
+                db.commit()
+
+        else:
+            raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
         return RedirectResponse(url='/dashboard')
     else:
         raise HTTPException(status_code=token_request.status_code, detail='failed to fetch access token')

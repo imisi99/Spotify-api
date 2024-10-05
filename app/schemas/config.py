@@ -1,5 +1,4 @@
 import os
-import jwt
 from .database import begin
 from jose import JWTError, jwt
 from typing import Annotated
