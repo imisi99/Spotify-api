@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from starlette import status
 from dotenv import load_dotenv
-from  ..schemas.config import db_dependency, user_dependency
+from ..schemas.config import db_dependency, user_dependency, authentication
+from  ..schemas.user_schemas import *
 from ..schemas.model import UserModel
+from datetime import timedelta
 import string
 import random
 import urllib.parse
@@ -37,7 +39,7 @@ def login(request: Request):
     return RedirectResponse(url)
 
 
-@user.get("/callback")
+@user.get("/callback", response_model=Token)
 def callback(request: Request, db: db_dependency):
     code = request.query_params.get('code')
     state = request.query_params.get('state')
@@ -89,9 +91,18 @@ def callback(request: Request, db: db_dependency):
 
         else:
             raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
-        return RedirectResponse(url='/dashboard')
+
+        get_user_data = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
+        jwt_token = authentication(get_user_data.id, get_user_data.username, timedelta(days=30))
+
+        return {
+            'access_token': jwt_token,
+            'token_type': 'bearer'
+        }
+
     else:
         raise HTTPException(status_code=token_request.status_code, detail='failed to fetch access token')
+
 
 
 @user.get('/profile')
