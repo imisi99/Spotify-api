@@ -1,6 +1,4 @@
 import os
-
-from AltSchool.Orderapi.app.routers.user import algorithm
 from .database import begin
 from jose import JWTError, jwt
 from typing import Annotated
