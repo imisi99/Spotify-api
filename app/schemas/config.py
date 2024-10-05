@@ -25,7 +25,7 @@ def authentication(user_id: int, username: str, limit):
     encode = {'sub': username, 'id': user_id}
     exp = datetime.utcnow() + limit
     encode.update({'exp': exp})
-    return jwt.encode(encode, )
+    return jwt.encode(encode, secret, Algorithm)
 
 
 bearer = OAuth2PasswordBearer(tokenUrl='user/login')
