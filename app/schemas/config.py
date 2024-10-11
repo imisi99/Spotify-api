@@ -28,7 +28,7 @@ def authentication(user_id: int, username: str, limit):
     return jwt.encode(encode, secret, algorithm=Algorithm)
 
 
-async def get_user(token: Annotated[str | None, Cookie(None, alias="jwt_token")]):
+async def get_user(token: str | None = Cookie(None, alias="jwt_token")):
     if token is None:
         return RedirectResponse(url='/user/login')
     try:
