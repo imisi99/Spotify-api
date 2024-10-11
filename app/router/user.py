@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
 from ..schemas.config import db_dependency, user_dependency, authentication
@@ -95,20 +95,28 @@ def callback(request: Request, db: db_dependency):
         get_user_data = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
         jwt_token = authentication(get_user_data.id, get_user_data.username, timedelta(days=30))
 
-        return {
-            'access_token': jwt_token,
-            'token_type': 'bearer'
-        }
+        response = JSONResponse(content={
+            'message': 'User successfully logged in.'
+        })
 
+        response.set_cookie(
+            key='jwt_token',
+            value=jwt_token,
+            httponly=True,
+            secure=True,
+            samesite='lax'
+        )
+
+        return response
     else:
         raise HTTPException(status_code=token_request.status_code, detail='failed to fetch access token')
 
 
 
 @user.get('/profile')
-def get_user(request: Request, db: db_dependency, user: user_dependency):
+def get_user_profile(request: Request, db: db_dependency, user: user_dependency):
     if not user:
-        return RedirectResponse(url='/user/login')
+        return RedirectResponse(url='user/login')
     token = request.session.get('access_token')
     if not token:
         return RedirectResponse(url='/user/login')

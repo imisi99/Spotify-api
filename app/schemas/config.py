@@ -1,9 +1,9 @@
 import os
+from fastapi.responses import RedirectResponse
 from .database import begin
 from jose import JWTError, jwt
 from typing import Annotated
-from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Cookie
 from sqlalchemy.orm import Session
 from datetime import datetime
 from starlette import status
@@ -28,10 +28,9 @@ def authentication(user_id: int, username: str, limit):
     return jwt.encode(encode, secret, algorithm=Algorithm)
 
 
-bearer = OAuth2PasswordBearer(tokenUrl='user/login')
-
-
-async def get_user(token: Annotated[str, Depends(bearer)]):
+async def get_user(token: Annotated[str | None, Cookie(None, alias="jwt_token")]):
+    if token is None:
+        return RedirectResponse(url='/user/login')
     try:
         payload = jwt.decode(token, secret, algorithms=[Algorithm])
         user_id = payload.get('id')
