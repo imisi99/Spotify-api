@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
@@ -106,6 +106,13 @@ def callback(request: Request, db: db_dependency):
             secure=True,
             samesite='lax'
         )
+        response.set_cookie(
+            key='access_token',
+            value=token,
+            httponly=True,
+            secure=True,
+            samesite='lax'
+        )
 
         return response
     else:
@@ -114,10 +121,9 @@ def callback(request: Request, db: db_dependency):
 
 
 @user.get('/profile')
-def get_user_profile(request: Request, db: db_dependency, user: user_dependency):
+def get_user_profile(db: db_dependency, user: user_dependency, token: str | None = Cookie(None, alias="access_token")):
     if not user:
         return RedirectResponse(url='user/login')
-    token = request.session.get('access_token')
     if not token:
         return RedirectResponse(url='/user/login')
 
