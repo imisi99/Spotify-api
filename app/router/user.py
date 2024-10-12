@@ -70,6 +70,10 @@ def callback(request: Request, db: db_dependency):
         request.session["access_token"] = token_info['access_token']
 
         token = request.session.get('access_token')
+
+        if token is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='failed to fetch access token')
+
         user_info = requests.get(
             'https://api.spotify.com/v1/me',
             headers={
@@ -88,7 +92,6 @@ def callback(request: Request, db: db_dependency):
                 )
                 db.add(new_user)
                 db.commit()
-
         else:
             raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
 
