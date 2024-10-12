@@ -55,7 +55,7 @@ def welcome_email(user_email, user_firstname):
         From=conf,
         To=user_email,
         Subject='Welcome To Dashie',
-        HTML=(f'''
+        HtmlBody=(f'''
     <div style="font-family: Arial, sans-serif; color: #333; background-color: #f0f4f8; padding: 20px; border-radius: 10px; text-align: center;">
         <h3 style="color: #4caf50;">🎉 Hey, {user_firstname}! 🎉</h3>
         <p style="font-size: 15px;">
