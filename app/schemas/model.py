@@ -11,7 +11,7 @@ class UserModel(data):
     created_playlist = Column(Integer, nullable=False, default=0)
     followers = Column(Integer, nullable=False, default=0)
     following = Column(Integer, nullable=False, default=0)
-    Level = Column(String, nullable=False, default="rookie")
+    level = Column(String, nullable=False, default="rookie")
 
 
 class Playlist(data):
