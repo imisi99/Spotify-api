@@ -7,6 +7,7 @@ from fastapi import Depends, HTTPException, Cookie
 from sqlalchemy.orm import Session
 from datetime import datetime
 from starlette import status
+from postmarker.core import PostmarkClient
 
 
 def get_db():
@@ -19,6 +20,8 @@ def get_db():
 
 secret = os.getenv('SECRET')
 Algorithm = os.getenv('ALGORITHM')
+conf = os.getenv('FROM')
+postmark = PostmarkClient(server_token=os.getenv('POSTMARK'))
 
 
 def authentication(user_id: int, username: str, limit):
@@ -46,6 +49,41 @@ async def get_user(token: str | None = Cookie(None, alias="jwt_token")):
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"An error occurred as {e}")
 
+
+def welcome_email(user_email, user_firstname):
+    response = postmark.emails.send(
+        From=conf,
+        To=user_email,
+        Subject='Welcome To Dashie',
+        HTML=(f'''
+    <div style="font-family: Arial, sans-serif; color: #333; background-color: #f0f4f8; padding: 20px; border-radius: 10px; text-align: center;">
+        <h3 style="color: #4caf50;">🎉 Hey, {user_firstname}! 🎉</h3>
+        <p style="font-size: 15px;">
+            We are pleased to have you onboard, Welcome to a great experience Buckle up cause listening to music has not been this fun.
+        </p>
+        <p style="font-size: 15px; margin-top: 10px;">
+            We are streaming platform that allow for listeners like you to not only play music but also be able to share your experience with your friends by collaborating to create playlist together and so much more
+        </p>
+        <div style="margin-top: 15px;">
+            <a href="https://spotify-dv92.onrender.com/user/login" style="text-decoration: none; background-color: #4caf50; color: green; padding: 10px 20px; border-radius: 5px; font-size: 15px;">Begin your journey</a>
+        </div>
+        <p style="font-size: 14px; color: #757575; margin-top: 20px;">
+            Once again Welcome,<br/>
+            <strong>Dashie</strong>
+        </p>
+    </div>
+'''),
+        TextBody=f'Hey {user_firstname},\n We are pleased to have you onboard, Welcome to a great experience Buckle up cause listening to music has not been this fun.\n We are streaming platform that allow for listeners like you to not only play music but also'
+                  f'be able to share your experience with your friends by collaborating to create playlist together and so much more.\n\n\n Once again Welcome to Dashie \n You can begin your journey here https://spotify-dv92.onrender.com/user/login'
+        ,
+        MessageStream='outbound'
+
+    )
+
+    if response['ErrorCode']  == 0:
+        return True
+    else:
+        return False
 
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[Session, Depends(get_user)]

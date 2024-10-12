@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Request, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
-from ..schemas.config import db_dependency, user_dependency, authentication
+from ..schemas.config import db_dependency, user_dependency, authentication, welcome_email
 from  ..schemas.user_schemas import *
 from ..schemas.model import UserModel
 from datetime import timedelta
@@ -71,9 +71,6 @@ def callback(request: Request, db: db_dependency):
 
         token = request.session.get('access_token')
 
-        if token is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='failed to fetch access token please just work')
-
         user_info = requests.get(
             'https://api.spotify.com/v1/me',
             headers={
@@ -92,6 +89,12 @@ def callback(request: Request, db: db_dependency):
                 )
                 db.add(new_user)
                 db.commit()
+
+                if welcome_email(user_data.get('email'), user_data.get('display_name')):
+                    pass
+                else:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Unauthorized user')
+
         else:
             raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
 
