@@ -148,7 +148,7 @@ def get_user_profile(request: Request, db: db_dependency, user: user_dependency)
             'followers': user_db.followers,
             'following': user_db.following,
             'level': user_db.level,
-            'playlists': user_db.playlists
+            'playlists': user_db.created_playlist
 
         }
 
