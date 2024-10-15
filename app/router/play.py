@@ -2,6 +2,7 @@ from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette import status
 from ..schemas.config import db_dependency, user_dependency
+from ..schemas.model import *
 import requests
 
 play = APIRouter()
@@ -12,6 +13,7 @@ play = APIRouter()
 async def create_playlist(name: str,
                           description: str,
                           user: user_dependency,
+                          db: db_dependency,
                           public: bool = True,
                           collaborative: bool = True,
                           token: str | None = Cookie(None, alias="access_token"),
@@ -42,16 +44,26 @@ async def create_playlist(name: str,
     )
 
     if playlist.status_code == 201:
+        data = Playlist(
+            name=name,
+            username=user.get('username'),
+            user_id=user.get('id')
+        )
+
+        db.add(data)
+        db.commit()
         return {'message': f'Playlist created successfully {playlist.json()}'}
+
     else:
         raise HTTPException(status_code=playlist.status_code, detail='failed to create playlist')
 
 
 @play.post('/create/private')
 async def create_playlist_private(user: user_dependency,
+                                  db: db_dependency,
                                   name: str,
                                   description: str,
-                                  public: bool = False,
+                                  public: bool = True,
                                   collaborative: bool = False,
                                   token: str | None = Cookie(None, alias="access_token")):
     if not token or user:
@@ -81,6 +93,14 @@ async def create_playlist_private(user: user_dependency,
     )
 
     if playlist.status_code == 200:
+        data = Playlist(
+            name=name,
+            username=user.get('username'),
+            user_id=user.get('id')
+        )
+
+        db.add(data)
+        db.commit()
         return {'message': f'Playlist created successfully {playlist.json()}'}
 
     else:
@@ -88,10 +108,37 @@ async def create_playlist_private(user: user_dependency,
 
 
 @play.put('/make_public')
-async def private_to_public():
-    pass
+async def private_to_public(name: str,
+                            user: user_dependency,
+                            db: db_dependency,
 
+                            token: str | None = Cookie(None, alias="access_token")):
 
+    if not user or token:
+        return RedirectResponse(url='user/login')
+
+    user_info = requests.get(
+        'https://api.spotify.com/v1/me',
+        headers={
+            'Authorization': f'Bearer {token}'
+        }
+    )
+
+    if user_info.status_code == 200:
+        user_data = user_info.json()
+        user_id = user_data.get('id')
+
+        if user_id is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= 'Failed to fetch user id')
+    else:
+        raise HTTPException(status_code=user_info.status_code, detail= user_info.json())
+
+    playlist_update = requests.put(
+        f'https://api.spotify.com/v1/users/{user_id}/playlists/',
+        headers={
+            'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+        json={}
+    )
 @play.put('/make_private')
 async def public_to_private():
     pass
