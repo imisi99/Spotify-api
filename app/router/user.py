@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Request, Cookie
+from fastapi import APIRouter, HTTPException, Response, Request, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
 from ..schemas.config import db_dependency, user_dependency, authentication, welcome_email
-from  ..schemas.user_schemas import *
+from ..schemas.user_schemas import *
 from ..schemas.model import UserModel
 from datetime import timedelta
 import string
@@ -12,7 +12,6 @@ import urllib.parse
 import requests
 import os
 import base64
-
 
 load_dotenv()
 
@@ -109,12 +108,14 @@ def callback(request: Request, db: db_dependency):
             key='jwt_token',
             value=jwt_token,
             httponly=True,
+            max_age=60 * 60 * 24 * 14,
             secure=True,
             samesite='lax'
         )
         response.set_cookie(
             key='access_token',
             value=token,
+            max_age=60 * 60 * 24 * 30,
             httponly=True,
             secure=True,
             samesite='lax'
@@ -123,7 +124,6 @@ def callback(request: Request, db: db_dependency):
         return response
     else:
         raise HTTPException(status_code=token_request.status_code, detail='failed to fetch access token')
-
 
 
 @user.get('/profile')
@@ -170,6 +170,7 @@ def get_user_profile(db: db_dependency, user: user_dependency, token: str | None
 
 
 @user.get('/logout')
-def logout(request: Request):
-    request.session.clear()
+def logout(response: Response):
+    response.delete_cookie('jwt_token')
+    response.delete_cookie('access_token')
     return RedirectResponse(url='/')
