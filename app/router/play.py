@@ -48,8 +48,43 @@ async def create_playlist(name: str,
 
 
 @play.post('/create/private')
-async def create_playlist_private():
-    pass
+async def create_playlist_private(user: user_dependency,
+                                  name: str,
+                                  description: str,
+                                  public: bool = False,
+                                  collaborative: bool = False,
+                                  token: str | None = Cookie(None, alias="access_token")):
+    if not token or user:
+        return RedirectResponse(url='user/login')
+
+    user_info = requests.get(
+        'https://api.spotify.com/v1/me',
+        headers={
+            'Authorization': f'Bearer {token}'
+        }
+    )
+
+    if user_info.status_code == 200:
+        user_data = user_info.json()
+        user_id = user_data.get('id')
+    else:
+        raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
+
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Failed to fetch user Id')
+
+    playlist = requests.post(
+        f'https://api.spotify.com/v1/users/{user_id}/playlists',
+        headers={
+            'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+        json={'name': name, 'description': description, 'public': public, 'collaborative': collaborative}
+    )
+
+    if playlist.status_code == 200:
+        return {'message': f'Playlist created successfully {playlist.json()}'}
+
+    else:
+        raise HTTPException(status_code=playlist.status_code, detail=playlist.json())
 
 
 @play.put('/make_public')
