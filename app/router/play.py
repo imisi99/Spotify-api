@@ -1,13 +1,50 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Cookie, HTTPException
+from fastapi.responses import RedirectResponse
+from starlette import status
 from ..schemas.config import db_dependency, user_dependency
+import requests
 
 play = APIRouter()
 
 
 # Users should be able to create and contribute to a playlist
 @play.post('/create')
-async def create_playlist():
-    pass
+async def create_playlist(name: str,
+                          description: str,
+                          user: user_dependency,
+                          public: bool = True,
+                          collaborative: bool = True,
+                          token: str | None = Cookie(None, alias="access_token"),
+                          ):
+    if user or token is None:
+        return RedirectResponse(url='/user/login')
+
+    user_info = requests.get(
+        'https://api.spotify.com/v1/me',
+        headers={
+            'Authorization': f'Bearer {token}'
+        }
+    )
+    if user_info.status_code == 200:
+        user_data = user_info.json()
+        user_id = user_data.get('id')
+    else:
+        raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
+
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User Id not found')
+
+    playlist = requests.post(
+        f'https://api.spotify.com/v1/users/{user_id}/playlists',
+        headers={
+            'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+        json={'name': name, 'description': description, 'public': public, 'collaborative': collaborative}
+    )
+
+    if playlist.status_code == 201:
+        return {'message': f'Playlist created successfully {playlist.json()}'}
+    else:
+        raise HTTPException(status_code=playlist.status_code, detail='failed to create playlist')
 
 
 @play.post('/create/private')
