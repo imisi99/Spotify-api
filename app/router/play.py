@@ -18,7 +18,9 @@ async def create_playlist(name: str,
                           collaborative: bool = True,
                           token: str | None = Cookie(None, alias="access_token"),
                           ):
-    if user or token is None:
+    if not user:
+        return RedirectResponse(url='/user/login')
+    if not token:
         return RedirectResponse(url='/user/login')
 
     user_info = requests.get(
@@ -66,7 +68,9 @@ async def create_playlist_private(user: user_dependency,
                                   public: bool = True,
                                   collaborative: bool = False,
                                   token: str | None = Cookie(None, alias="access_token")):
-    if not token or user:
+    if not token:
+        return RedirectResponse(url='user/login')
+    if not user:
         return RedirectResponse(url='user/login')
 
     user_info = requests.get(
@@ -111,10 +115,11 @@ async def create_playlist_private(user: user_dependency,
 async def private_to_public(name: str,
                             user: user_dependency,
                             db: db_dependency,
-
                             token: str | None = Cookie(None, alias="access_token")):
 
-    if not user or token:
+    if not user:
+        return RedirectResponse(url='user/login')
+    if not token:
         return RedirectResponse(url='user/login')
 
     user_info = requests.get(
@@ -139,6 +144,8 @@ async def private_to_public(name: str,
             'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
         json={}
     )
+
+
 @play.put('/make_private')
 async def public_to_private():
     pass

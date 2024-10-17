@@ -128,7 +128,9 @@ def callback(request: Request, db: db_dependency):
 
 @user.get('/profile')
 def get_user_profile(db: db_dependency, user: user_dependency, token: str | None = Cookie(None, alias="access_token")):
-    if not user or token:
+    if not user:
+        return RedirectResponse(url='/user/login')
+    if not token:
         return RedirectResponse(url='/user/login')
 
     user_info = requests.get(
