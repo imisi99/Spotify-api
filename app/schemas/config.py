@@ -74,16 +74,16 @@ def welcome_email(user_email, user_firstname):
     </div>
 '''),
         TextBody=f'Hey {user_firstname},\n We are pleased to have you onboard, Welcome to a great experience Buckle up cause listening to music has not been this fun.\n We are streaming platform that allow for listeners like you to not only play music but also'
-                  f'be able to share your experience with your friends by collaborating to create playlist together and so much more.\n\n\n Once again Welcome to Dashie \n You can begin your journey here https://spotify-dv92.onrender.com/user/login'
-        ,
+                 f'be able to share your experience with your friends by collaborating to create playlist together and so much more.\n\n\n Once again Welcome to Dashie \n You can begin your journey here https://spotify-dv92.onrender.com/user/login',
         MessageStream='outbound'
 
     )
 
-    if response['ErrorCode']  == 0:
+    if response['ErrorCode'] == 0:
         return True
     else:
         return False
+
 
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[Session, Depends(get_user)]

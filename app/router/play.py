@@ -46,13 +46,13 @@ async def create_playlist(name: str,
     )
 
     if playlist.status_code == 201:
-        data = Playlist(
+        new = Playlist(
             name=name,
             username=user.get('username'),
             user_id=user.get('id')
         )
 
-        db.add(data)
+        db.add(new)
         db.commit()
         return {'message': f'Playlist created successfully {playlist.json()}'}
 
@@ -97,13 +97,13 @@ async def create_playlist_private(user: user_dependency,
     )
 
     if playlist.status_code == 200:
-        data = Playlist(
+        new = Playlist(
             name=name,
             username=user.get('username'),
             user_id=user.get('id')
         )
 
-        db.add(data)
+        db.add(new)
         db.commit()
         return {'message': f'Playlist created successfully {playlist.json()}'}
 
@@ -134,9 +134,9 @@ async def private_to_public(name: str,
         user_id = user_data.get('id')
 
         if user_id is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= 'Failed to fetch user id')
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Failed to fetch user id')
     else:
-        raise HTTPException(status_code=user_info.status_code, detail= user_info.json())
+        raise HTTPException(status_code=user_info.status_code, detail=user_info.json())
 
     playlist_update = requests.put(
         f'https://api.spotify.com/v1/users/{user_id}/playlists/',
