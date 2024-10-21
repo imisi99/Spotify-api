@@ -9,7 +9,7 @@ play = APIRouter()
 
 
 # Users should be able to create and contribute to a playlist
-@play.post('/create')
+@play.get('/create')
 async def create_playlist(name: str,
                           description: str,
                           user: user_dependency,
