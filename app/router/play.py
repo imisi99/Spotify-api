@@ -57,7 +57,7 @@ async def create_playlist(name: str,
         return {'message': f'Playlist created successfully {playlist.json()}'}
 
     else:
-        raise HTTPException(status_code=playlist.status_code, detail='failed to create playlist')
+        raise HTTPException(status_code=playlist.status_code, detail=f'failed to create playlist: {playlist.json()}')
 
 
 @play.post('/create/private')
