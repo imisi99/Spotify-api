@@ -30,7 +30,7 @@ def login(request: Request):
         'redirect_uri': redirect_uri,
         'client_id': client_id,
         'response_type': 'code',
-        'scope': 'user-read-private user-read-email user-library-read user-library-modify playlist-read-private playlist-modify-private',
+        'scope': 'user-read-private user-read-email user-library-read user-library-modify playlist-read-private playlist-modify-private playlist-modify-public',
 
     }
     request.session["state"] = state
