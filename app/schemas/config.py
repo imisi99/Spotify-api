@@ -43,7 +43,7 @@ async def get_user(token: str | None = Cookie(None, alias="jwt_token")):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="An error occurred while logging-in please try again")
         return {
-            'user_id': user_id,
+            'id': user_id,
             'username': username
         }
     except JWTError as e:
