@@ -31,7 +31,7 @@ async def create_playlist(name: str,
     )
     if user_info.status_code == 200:
         user_data = user_info.json()
-        user_id = user_data.get('id')
+        user_id = user_data.get('user_id')
     else:
         raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
 
