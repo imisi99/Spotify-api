@@ -18,7 +18,7 @@ class Playlist(data):
     __tablename__ = "playlist"
 
     id = Column(Integer, index=True, primary_key=True)
-    name = Column(String(50), nullable=False, unique=True)
+    name = Column(String(50), nullable=False, unique=False)
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     username = Column(String, nullable=False)
     genre = Column(String, index=True, nullable=True)

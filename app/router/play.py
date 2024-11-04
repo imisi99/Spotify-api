@@ -65,7 +65,7 @@ async def create_playlist_private(user: user_dependency,
                                   db: db_dependency,
                                   name: str,
                                   description: str,
-                                  public: bool = True,
+                                  public: bool = False,
                                   collaborative: bool = False,
                                   token: str | None = Cookie(None, alias="access_token")):
     if not token:
@@ -96,7 +96,7 @@ async def create_playlist_private(user: user_dependency,
         json={'name': name, 'description': description, 'public': public, 'collaborative': collaborative}
     )
 
-    if playlist.status_code == 200:
+    if playlist.status_code == 201:
         new = Playlist(
             name=name,
             username=user.get('username'),
