@@ -59,8 +59,28 @@ async def find_playlists(name: str,
     playlist_search = db.query(Playlist).filter(Playlist.name.ilike(f"%{name}%") |
                                                 Playlist.name.similarity(name) > 0.3).order_by(desc(Playlist.name.similarity(name))).all()
 
-    playlist =
-    return {'playlists': playlist_search}
+    playlist = []
+
+    for item in playlist_search:
+        collab = [user.username for user in item.users]
+
+        playlist_data = PlaylistReturn(
+            name=item.name,
+            username=collab,
+            genre=item.genre,
+            likes=item.likes,
+            plays=item.plays,
+            dislike=item.dislike,
+            rating=item.rating,
+            comments=item.comments,
+        )
+
+        playlist.append(playlist_data)
+
+    if not playlist_search:
+        raise HTTPException(status_code=404, detail='No playlist found, try using a different keyword')
+
+    return {'playlists': playlist}
 
 
 @play.post('/create')
@@ -200,13 +220,13 @@ async def private_to_public(payload: AlterPlaylist,
         headers={
             'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'},
-        json={'public': True}
+        json={'collaborative': True}
     )
 
     if playlist_update.status_code != 200:
         raise HTTPException(status_code=playlist_update.status_code, detail=playlist_update.json())
 
-    return {'message': 'Playlist updated to public successfully'}
+    return {'message': 'Playlist can now be edited by everyone'}
 
 
 @play.put('/make_private')
@@ -238,13 +258,13 @@ async def public_to_private(payload: AlterPlaylist,
         headers={'Authorization': f'Bearer {token}',
                  'Content-Type': 'application/json'
                  },
-        json={'public': False}
+        json={'collaborative': False}
     )
 
     if playlist_update.status_code != 200:
         raise HTTPException(status_code=playlist_update.status_code, detail=playlist_update.json())
 
-    return {'message': 'Playlist updated to private successfully '}
+    return {'message': 'Playlist can now be edited by the owner only'}
 
 
 @play.put('/alter')
@@ -267,6 +287,16 @@ async def alter_playlist(payload: AddTrack,
         raise HTTPException(status_code=user_info.status_code, detail=user_info.json())
 
     playlist = db.query(Playlist).filter(Playlist.name == payload.playlist_name).first()
+    collab = requests.get(
+        f'https://api.spotify.com/v1/playlists/{playlist.id}',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+    if collab.status_code != 200:
+        raise HTTPException(status_code=collab.status_code, detail=collab.json())
+
+    if not collab.json().get('collaborative'):
+        if playlist.user_id != user.get('id'):
+            raise HTTPException(status_code=403, detail='You are not the owner of this playlist')
 
     add_track = requests.post(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
@@ -287,7 +317,8 @@ async def alter_playlist(payload: AddTrack,
 async def listen():
     pass
 
-
+# Users should be able to like, dislike and rate playlist
+# Users should be able to contribute to a playlist
 # Users should be able to discuss playlist and the likes
 @play.get('/discussion')
 async def get_discussion():
