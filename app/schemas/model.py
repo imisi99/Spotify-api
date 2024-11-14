@@ -50,7 +50,7 @@ class Discussion(data):
     __tablename__ = "comments"
 
     id = Column(Integer, index=True, primary_key=True)
-    playlist_id = Column(Integer, ForeignKey("playlist.id", ondelete="CASCADE"), nullable=False)
+    playlist_id = Column(String, ForeignKey("playlist.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     time_stamp = Column(DateTime, nullable=False, default=func.now())
     comment = Column(String(100), nullable=False)
@@ -64,7 +64,7 @@ class Rating(data):
 
     id = Column(Integer, index=True, primary_key=True)
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
-    playlist_id = Column(Integer, ForeignKey("playlist.id", ondelete="CASCADE"), nullable=False)
+    playlist_id = Column(String, ForeignKey("playlist.id", ondelete="CASCADE"), nullable=False)
     rating = Column(Float, nullable=False)
 
     __table_args__ = (UniqueConstraint('user_id', 'playlist_id', name='unique_user_playlist'),)
