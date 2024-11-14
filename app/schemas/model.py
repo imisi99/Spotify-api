@@ -1,5 +1,13 @@
 from .database import data
-from sqlalchemy import Column, String, Integer, ForeignKey, Float, DateTime, UniqueConstraint
+from sqlalchemy import Column, String, Integer, ForeignKey, Float, DateTime, UniqueConstraint, Table
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
+
+playlist_users = Table(
+    'playlist_users', data.metadata,
+    Column('playlist_id', String, ForeignKey('playlist.id', ondelete="CASCADE"), primary_key=True),
+    Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"), primary_key=True)
+)
 
 
 class UserModel(data):
@@ -13,6 +21,8 @@ class UserModel(data):
     following = Column(Integer, nullable=False, default=0)
     level = Column(String, nullable=False, default="rookie")
 
+    playlists = relationship('Playlist', secondary=playlist_users, back_populates='users')
+
 
 class Playlist(data):
     __tablename__ = "playlist"
@@ -20,7 +30,6 @@ class Playlist(data):
     id = Column(String, primary_key=True)
     name = Column(String(50), nullable=False, unique=False)
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
-    username = Column(String, nullable=False)
     genre = Column(String, index=True, nullable=True)
     time = Column(Integer, nullable=True, default=0)
     likes = Column(Integer, nullable=False, default=0)
@@ -29,6 +38,11 @@ class Playlist(data):
     rating = Column(Float, nullable=True, default=0.0)
     comments = Column(Integer, nullable=False, default=0)
 
+    users = relationship('UserModel', secondary=playlist_users, back_populates='playlists')
+
+    comments_relationship = relationship('Discussion', back_populates='playlist')
+    ratings = relationship('Rating', back_populates='playlist')
+
 
 class Discussion(data):
     __tablename__ = "comments"
@@ -36,8 +50,11 @@ class Discussion(data):
     id = Column(Integer, index=True, primary_key=True)
     playlist_id = Column(Integer, ForeignKey("playlist.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
-    time_stamp = Column(DateTime, nullable=False)
+    time_stamp = Column(DateTime, nullable=False, default=func.now())
     comment = Column(String(100), nullable=False)
+
+    user = relationship('UserModel', backref='comments')
+    playlist = relationship('Playlist', back_populates='comments_relationship')
 
 
 class Rating(data):
@@ -49,6 +66,9 @@ class Rating(data):
     rating = Column(Float, nullable=False)
 
     __table_args__ = (UniqueConstraint('user_id', 'playlist_id', name='unique_user_playlist'),)
+
+    user = relationship('UserModel', backref='ratings')
+    playlist = relationship('Playlist', back_populates='ratings')
 
 
 class State(data):
