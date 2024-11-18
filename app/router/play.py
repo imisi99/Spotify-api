@@ -57,7 +57,8 @@ async def find_playlists(name: str,
         return RedirectResponse(url='/user/login')
 
     playlist_search = db.query(Playlist).filter(Playlist.name.ilike(f"%{name}%") |
-                                                Playlist.name.similarity(name) > 0.3).order_by(desc(Playlist.name.similarity(name))).all()
+                                                Playlist.name.similarity(name) > 0.3).order_by(
+        desc(Playlist.name.similarity(name))).all()
 
     playlist = []
 
@@ -317,6 +318,7 @@ async def alter_playlist(payload: AddTrack,
 async def listen():
     pass
 
+
 # Users should be able to like, dislike and rate playlist
 @play.put('/likes')
 async def like_playlist(payload: AlterPlaylist,
@@ -332,10 +334,11 @@ async def like_playlist(payload: AlterPlaylist,
     db.add(playlist)
     db.commit()
 
+
 @play.put('/dislike')
 async def dislike_playlist(payload: AlterPlaylist,
-                            user: user_dependency,
-                            db: db_dependency):
+                           user: user_dependency,
+                           db: db_dependency):
     if not user:
         return RedirectResponse(url='/user/login')
 
@@ -345,7 +348,8 @@ async def dislike_playlist(payload: AlterPlaylist,
 
     db.add(Playlist)
     db.commit()
-    
+
+
 # Users should be able to contribute to a playlist
 # Users should be able to discuss playlist and the likes
 @play.get('/discussion')

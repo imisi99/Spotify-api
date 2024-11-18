@@ -55,7 +55,7 @@ class Discussion(data):
     time_stamp = Column(DateTime, nullable=False, default=func.now())
     comment = Column(String(100), nullable=False)
 
-    user = relationship('UserModel', backref='comments')
+    user = relationship('UserModel', back_populates='comments')
     playlist = relationship('Playlist', back_populates='comments_relationship')
 
 
@@ -69,7 +69,7 @@ class Rating(data):
 
     __table_args__ = (UniqueConstraint('user_id', 'playlist_id', name='unique_user_playlist'),)
 
-    user = relationship('UserModel', backref='ratings')
+    user = relationship('UserModel', back_populates='ratings')
     playlist = relationship('Playlist', back_populates='ratings')
 
 
