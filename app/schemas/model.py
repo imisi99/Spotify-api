@@ -9,6 +9,18 @@ playlist_users = Table(
     Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"), primary_key=True)
 )
 
+playlist_likes = Table(
+    'playlist_likes', data.metadata,
+    Column('playlist_id', String, ForeignKey('playlist.id', ondelete="CASCADE"), primary_key=True),
+    Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"), primary_key=True)
+)
+
+playlist_dislikes = Table(
+    'playlist_dislikes', data.metadata,
+    Column('playlist_id', String, ForeignKey('playlist.id', ondelete="CASCADE"), primary_key=True),
+    Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"), primary_key=True)
+)
+
 
 class UserModel(data):
     __tablename__ = 'user'
@@ -24,6 +36,9 @@ class UserModel(data):
     playlists = relationship('Playlist', secondary=playlist_users, back_populates='users')
     ratings = relationship('Rating', back_populates='user')
     comments = relationship('Discussion', back_populates='user')
+
+    liked_playlists = relationship('Playlist', secondary=playlist_likes, back_populates='liked_by')
+    disliked_playlists = relationship('Playlist', secondary=playlist_dislikes, back_populates='disliked_by')
 
 
 class Playlist(data):
@@ -44,6 +59,9 @@ class Playlist(data):
 
     comments_relationship = relationship('Discussion', back_populates='playlist')
     ratings = relationship('Rating', back_populates='playlist')
+
+    liked_by = relationship('UserModel', secondary=playlist_likes, back_populates='liked_playlists')
+    disliked_by = relationship('UserModel', secondary=playlist_dislikes, back_populates='disliked_playlists')
 
 
 class Discussion(data):

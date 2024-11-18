@@ -123,8 +123,7 @@ async def create_playlist(payload: PlaylistCreate,
         new = Playlist(
             id=playlist_id,
             name=payload.name,
-            username=user.get('username'),
-            user_id=user.get('id')
+            user_id=user.id
         )
 
         db.add(new)
@@ -176,8 +175,7 @@ async def create_playlist_private(
         new = Playlist(
             id=playlist_id,
             name=payload.name,
-            username=user.get('username'),
-            user_id=user.get('id')
+            user_id=user.id
         )
 
         db.add(new)
@@ -252,7 +250,7 @@ async def public_to_private(payload: AlterPlaylist,
     playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
     if not playlist:
         raise HTTPException(status_code=404, detail='No playlist with that name')
-    playlist_id = playlist.get('id')
+    playlist_id = playlist.id
 
     playlist_update = requests.put(
         f'https://api.spotify.com/v1/users/playlists/{playlist_id}/',
@@ -296,7 +294,7 @@ async def alter_playlist(payload: AddTrack,
         raise HTTPException(status_code=collab.status_code, detail=collab.json())
 
     if not collab.json().get('collaborative'):
-        if playlist.user_id != user.get('id'):
+        if playlist.user_id != user.id:
             raise HTTPException(status_code=403, detail='You are not the owner of this playlist')
 
     add_track = requests.post(
@@ -308,6 +306,9 @@ async def alter_playlist(payload: AddTrack,
     )
 
     if add_track.status_code == 201:
+        playlist.users.append(user)
+        db.add(playlist)
+        db.commit()
         return {'message': 'Track added to the playlist successfully'}
     else:
         raise HTTPException(status_code=add_track.status_code, detail=add_track.json())
@@ -329,7 +330,17 @@ async def like_playlist(payload: AlterPlaylist,
 
     playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
 
+    if not playlist:
+        raise HTTPException(status_code=404, detail='No playlist with that name')
+
+    if user in playlist.liked_by:
+        return
+    playlist.liked_by.append(user)
     playlist.likes += 1
+
+    if user in playlist.disliked_by:
+        playlist.disliked_by.remove(user)
+        playlist.dislike -= 1
 
     db.add(playlist)
     db.commit()
@@ -344,7 +355,18 @@ async def dislike_playlist(payload: AlterPlaylist,
 
     playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
 
+    if not playlist:
+        raise HTTPException(status_code=404, detail='No playlist with that name')
+
+    if user in playlist.disliked_by:
+        return
+
+    playlist.disliked_by.append(user)
     playlist.dislike += 1
+
+    if user in playlist.liked_by:
+        playlist.liked_by.remove(user)
+        playlist.likes -= 1
 
     db.add(Playlist)
     db.commit()

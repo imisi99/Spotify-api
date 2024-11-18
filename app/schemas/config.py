@@ -1,6 +1,7 @@
 import os
 from fastapi.responses import RedirectResponse
 from .database import begin
+from .model import UserModel
 from jose import JWTError, jwt
 from typing import Annotated
 from fastapi import Depends, HTTPException, Cookie
@@ -31,21 +32,29 @@ def authentication(user_id: int, username: str, limit):
     return jwt.encode(encode, secret, algorithm=Algorithm)
 
 
-async def get_user(token: str | None = Cookie(None, alias="jwt_token")):
+db_dependency = Annotated[Session, Depends(get_db)]
+
+
+async def get_user(db: db_dependency, token: str | None = Cookie(None, alias="jwt_token")):
     if token is None:
         return RedirectResponse(url='/user/login')
     try:
         payload = jwt.decode(token, secret, algorithms=[Algorithm])
         user_id = payload.get('id')
         username = payload.get('sub')
+        exp = payload.get('exp')
 
         if user_id is None or username is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                detail="An error occurred while logging-in please try again")
-        return {
-            'id': user_id,
-            'username': username
-        }
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail="Invalid Token, please login again")
+        if exp and datetime.utcnow() > exp:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZEDT,
+                                detail="Session Expired, please login again")
+
+        user = db.query(UserModel).filter(UserModel.id == user_id).first()
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return user
     except JWTError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"An error occurred as {e}")
 
@@ -85,5 +94,4 @@ def welcome_email(user_email, user_firstname):
         return False
 
 
-db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[Session, Depends(get_user)]
