@@ -23,7 +23,7 @@ class UserModel(data):
 
     playlists = relationship('Playlist', secondary=playlist_users, back_populates='users')
     ratings = relationship('Rating', back_populates='user')
-    comments = relationship('Discussion', backref='user')
+    comments = relationship('Discussion', back_populates='user')
 
 
 class Playlist(data):

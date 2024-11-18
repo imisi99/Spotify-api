@@ -318,6 +318,34 @@ async def listen():
     pass
 
 # Users should be able to like, dislike and rate playlist
+@play.put('/likes')
+async def like_playlist(payload: AlterPlaylist,
+                        user: user_dependency,
+                        db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
+
+    playlist.likes += 1
+
+    db.add(playlist)
+    db.commit()
+
+@play.put('/dislike')
+async def dislike_playlist(payload: AlterPlaylist,
+                            user: user_dependency,
+                            db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
+
+    playlist.dislike += 1
+
+    db.add(Playlist)
+    db.commit()
+    
 # Users should be able to contribute to a playlist
 # Users should be able to discuss playlist and the likes
 @play.get('/discussion')
