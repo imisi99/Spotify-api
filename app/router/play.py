@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette import status
-from sqlalchemy import func
 from sqlalchemy import desc
 from ..schemas.config import db_dependency, user_dependency
 from ..schemas.model import *
