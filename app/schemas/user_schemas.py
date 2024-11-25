@@ -39,3 +39,7 @@ class PlaylistReturn(BaseModel):
 class AddTrack(BaseModel):
     track_id: list[str]
     playlist_name: str
+
+
+class Listen(BaseModel):
+    playlist_id: str

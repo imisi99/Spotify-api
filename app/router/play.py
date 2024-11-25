@@ -315,8 +315,34 @@ async def alter_playlist(payload: AddTrack,
 
 # Users should be able to listen to music even if they are not logged-in
 @play.get('/listen')
-async def listen():
-    pass
+async def listen(payload: Listen,
+                 user: user_dependency,
+                 token: str | None = Cookie(None, alias="access_token")):
+    if not user:
+        return RedirectResponse(url='/user/login')
+    if not token:
+        return RedirectResponse(url='/user/login')
+
+    user_info = requests.get(
+        'https://api.spotify.com/v1/me',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+
+    if user_info.status_code != 200:
+        raise HTTPException(status_code=user_info.status_code, detail='Failed to verify token')
+
+    playlist = requests.get(
+        f'https://api.spotiify.com/v1/playlists/{payload.playlist_id}',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+
+    if playlist.status_code != 200:
+        raise HTTPException(status_code=playlist.status_code, detail='Playlist not found')
+
+    return {
+        "access_token": token,
+        "playback_url": f'https://open.spotify.com/playlist/{payload.playlist_id}',
+    }
 
 
 # Users should be able to like, dislike and rate playlist
