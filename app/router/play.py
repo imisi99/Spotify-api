@@ -55,9 +55,12 @@ async def find_playlists(name: str,
     if not token:
         return RedirectResponse(url='/user/login')
 
-    playlist_search = db.query(Playlist).filter(Playlist.name.ilike(f"%{name}%") |
-                                                func.similarity(Playlist.name, name) > 0.3).order_by(
-        desc(func.similarity(Playlist.name, name))).all()
+    playlist_search = db.query(Playlist).filter(
+        (Playlist.name.ilike(f"%{name}%")) |
+        (func.similarity(Playlist.name, name) > 0.3)
+    ).order_by(
+        desc(func.similarity(Playlist.name, name))
+    ).all()
 
     playlist = []
 
