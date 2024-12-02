@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 
 
 class Token(BaseModel):
@@ -27,13 +27,17 @@ class AlterPlaylist(BaseModel):
 
 class PlaylistReturn(BaseModel):
     name: str
-    username: list[str]
-    genre: Optional[str] = None
+    username: List[str]
+    genre: Optional[str]
     likes: int
     dislike: int
     plays: int
-    rating: Optional[float] = None
+    rating: Optional[float]
     comments: int
+
+
+class PlaylistResponse(BaseModel):
+    playlists: List[PlaylistReturn]
 
 
 class AddTrack(BaseModel):

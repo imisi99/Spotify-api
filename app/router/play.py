@@ -217,7 +217,7 @@ async def private_to_public(payload: AlterPlaylist,
     playlist_id = playlist.id
 
     playlist_update = requests.put(
-        f'https://api.spotify.com/v1/users/playlists/{playlist_id}/',
+        f'https://api.spotify.com/v1/playlists/{playlist_id}/',
         headers={
             'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'},
@@ -243,7 +243,7 @@ async def public_to_private(payload: AlterPlaylist,
     # validating token with spotify
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
-        headers={f'Authorization: Bearer {token}'}
+        headers={'Authorization': f'Bearer {token}'}
     )
 
     if user_info.status_code != 200:
@@ -255,7 +255,7 @@ async def public_to_private(payload: AlterPlaylist,
     playlist_id = playlist.id
 
     playlist_update = requests.put(
-        f'https://api.spotify.com/v1/users/playlists/{playlist_id}/',
+        f'https://api.spotify.com/v1/playlists/{playlist_id}/',
         headers={'Authorization': f'Bearer {token}',
                  'Content-Type': 'application/json'
                  },
