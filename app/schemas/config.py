@@ -44,6 +44,8 @@ async def get_user(db: db_dependency, token: str | None = Cookie(None, alias="jw
         username = payload.get('sub')
         exp = payload.get('exp')
 
+        exp = datetime.utcfromtimestamp(exp)
+
         if user_id is None or username is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                 detail="Invalid Token, please login again")
