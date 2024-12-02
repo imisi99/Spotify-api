@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette import status
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from ..schemas.config import db_dependency, user_dependency
 from ..schemas.model import *
 from ..schemas.user_schemas import *
@@ -56,8 +56,8 @@ async def find_playlists(name: str,
         return RedirectResponse(url='/user/login')
 
     playlist_search = db.query(Playlist).filter(Playlist.name.ilike(f"%{name}%") |
-                                                Playlist.name.similarity(name) > 0.3).order_by(
-        desc(Playlist.name.similarity(name))).all()
+                                                func.similarity(Playlist.name, name) > 0.3).order_by(
+        desc(func.similarity(Playlist.name, name))).all()
 
     playlist = []
 
