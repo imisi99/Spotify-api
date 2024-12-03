@@ -45,7 +45,7 @@ async def search_tracks_spotify(name: str,
         raise HTTPException(status_code=search_response.status_code, detail=search_response.json())
 
 
-@play.get('/playlists/search', response_model=PlaylistReturn)
+@play.get('/playlists/search', response_model=PlaylistResponse)
 async def find_playlists(name: str,
                          user: user_dependency,
                          db: db_dependency,
@@ -56,8 +56,8 @@ async def find_playlists(name: str,
         return RedirectResponse(url='/user/login')
 
     playlist_search = db.query(Playlist).filter(
-        (Playlist.name.ilike(f"%{name}%")) |
-        (func.similarity(Playlist.name, name) > 0.3)
+        (Playlist.name.ilike(f"%{name}%")) and
+        (func.similarity(Playlist.name, name) > 0.2)
     ).order_by(
         desc(func.similarity(Playlist.name, name))
     ).all()
@@ -211,7 +211,7 @@ async def private_to_public(payload: AlterPlaylist,
 
     # getting playlist id from db
 
-    playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail='No playlist with that name')
     playlist_id = playlist.id
@@ -249,7 +249,7 @@ async def public_to_private(payload: AlterPlaylist,
     if user_info.status_code != 200:
         raise HTTPException(status_code=user_info.status_code, detail=user_info.json())
 
-    playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail='No playlist with that name')
     playlist_id = playlist.id
@@ -287,7 +287,7 @@ async def alter_playlist(payload: AddTrack,
     if user_info.status_code != 200:
         raise HTTPException(status_code=user_info.status_code, detail=user_info.json())
 
-    playlist = db.query(Playlist).filter(Playlist.name == payload.playlist_name).first()
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     collab = requests.get(
         f'https://api.spotify.com/v1/playlists/{playlist.id}',
         headers={'Authorization': f'Bearer {token}'}
@@ -356,7 +356,7 @@ async def like_playlist(payload: AlterPlaylist,
     if not user:
         return RedirectResponse(url='/user/login')
 
-    playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
 
     if not playlist:
         raise HTTPException(status_code=404, detail='No playlist with that name')
@@ -381,7 +381,7 @@ async def dislike_playlist(payload: AlterPlaylist,
     if not user:
         return RedirectResponse(url='/user/login')
 
-    playlist = db.query(Playlist).filter(Playlist.name == payload.name).first()
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
 
     if not playlist:
         raise HTTPException(status_code=404, detail='No playlist with that name')

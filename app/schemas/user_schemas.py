@@ -22,7 +22,7 @@ class PlaylistPrivateCreate(BaseModel):
 
 
 class AlterPlaylist(BaseModel):
-    name: str
+    id: str
 
 
 class PlaylistReturn(BaseModel):
@@ -42,7 +42,7 @@ class PlaylistResponse(BaseModel):
 
 class AddTrack(BaseModel):
     track_id: list[str]
-    playlist_name: str
+    id: str
 
 
 class Listen(BaseModel):
