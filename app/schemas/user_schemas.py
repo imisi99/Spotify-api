@@ -41,7 +41,7 @@ class PlaylistResponse(BaseModel):
 
 
 class AddTrack(BaseModel):
-    track_id: list[str]
+    track_id: List[str]
     id: str
 
 
