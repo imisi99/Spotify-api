@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette import status
-from sqlalchemy import desc, func
+from sqlalchemy import desc
 from ..schemas.config import db_dependency, user_dependency
 from ..schemas.model import *
 from ..schemas.user_schemas import *
@@ -220,7 +220,8 @@ async def private_to_public(payload: AlterPlaylist,
         headers={
             'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'},
-        json={'collaborative': True}
+        json={'collaborative': True,
+              'public': True}
     )
 
     if playlist_update.status_code != 200:
@@ -258,7 +259,8 @@ async def public_to_private(payload: AlterPlaylist,
         headers={'Authorization': f'Bearer {token}',
                  'Content-Type': 'application/json'
                  },
-        json={'collaborative': False}
+        json={'collaborative': False,
+              'public': False}
     )
 
     if playlist_update.status_code != 200:

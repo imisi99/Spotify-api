@@ -17,7 +17,7 @@ class PlaylistCreate(BaseModel):
 class PlaylistPrivateCreate(BaseModel):
     name: str
     description: str
-    pubic: bool = False
+    public: bool = False
     collaborative: bool = False
 
 
