@@ -349,7 +349,8 @@ async def listen(payload: Listen,
 
     return {
         "access_token": token,
-        "playback_url": f'https://open.spotify.com/playlist/{payload.playlist_id}',
+        "playback_url_spotify": f'https://open.spotify.com/playlist/{payload.playlist_id}',
+        "playlist_uri": f"spotify:playlist:{payload.playlist_id}"
     }
 
 
@@ -401,7 +402,7 @@ async def dislike_playlist(payload: AlterPlaylist,
         playlist.liked_by.remove(user)
         playlist.likes -= 1
 
-    db.add(Playlist)
+    db.add(playlist)
     db.commit()
 
 
