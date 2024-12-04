@@ -144,11 +144,11 @@ def get_user_profile(db: db_dependency, user: user_dependency, token: str | None
         user_data = user_info.json()
         email = user_data.get('email')
         if email is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Failed to access user email')
 
         user_db = db.query(UserModel).filter(UserModel.email == email).first()
         if user_db is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         if user_db.username != user_data.get('display_name'):
             user_db.username = user_data.get('display_name')
             db.add(user_db)
@@ -166,7 +166,7 @@ def get_user_profile(db: db_dependency, user: user_dependency, token: str | None
 
         return profile
     else:
-        raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
+        raise HTTPException(status_code=user_info.status_code, detail='Failed to verify access token')
 
 
 @user.get('/logout')

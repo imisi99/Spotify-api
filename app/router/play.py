@@ -81,7 +81,7 @@ async def find_playlists(name: str,
         playlist.append(playlist_data)
 
     if not playlist_search:
-        raise HTTPException(status_code=404, detail='No playlist found, try using a different keyword')
+        return {'message': 'No playlist with that keyword, maybe you can create one'}
 
     return {'playlists': playlist}
 
@@ -107,7 +107,7 @@ async def create_playlist(payload: PlaylistCreate,
         user_data = user_info.json()
         user_id = user_data.get('id')
     else:
-        raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Failed to verify access token')
 
     if not user_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User Id not found')
@@ -134,7 +134,7 @@ async def create_playlist(payload: PlaylistCreate,
         return {'message': 'Playlist created successfully'}
 
     else:
-        raise HTTPException(status_code=playlist.status_code, detail=f'failed to create playlist: {playlist.json()}')
+        raise HTTPException(status_code=playlist.status_code, detail=f'Failed to create playlist: {playlist.json()}')
 
 
 @play.post('/create/private')
@@ -159,10 +159,10 @@ async def create_playlist_private(
         user_data = user_info.json()
         user_id = user_data.get('id')
     else:
-        raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Failed to verify access token')
 
     if not user_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Failed to fetch user Id')
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='User Id not found')
 
     playlist = requests.post(
         f'https://api.spotify.com/v1/users/{user_id}/playlists',
@@ -186,7 +186,7 @@ async def create_playlist_private(
         return {'message': 'Playlist created successfully'}
 
     else:
-        raise HTTPException(status_code=playlist.status_code, detail=playlist.json())
+        raise HTTPException(status_code=playlist.status_code, detail=f'Failed to create playlist {playlist.json()}')
 
 
 @play.put('/make_public')
@@ -207,13 +207,14 @@ async def private_to_public(payload: AlterPlaylist,
     )
 
     if user_info.status_code != 200:
-        raise HTTPException(status_code=user_info.status_code, detail=user_info.json())
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Failed to verify access token')
 
     # getting playlist id from db
 
     playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     if not playlist:
-        raise HTTPException(status_code=404, detail='No playlist with that name')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Playlist not found')
+
     playlist_id = playlist.id
     playlist_update = requests.put(
         f'https://api.spotify.com/v1/playlists/{playlist_id}/',
@@ -247,11 +248,11 @@ async def public_to_private(payload: AlterPlaylist,
     )
 
     if user_info.status_code != 200:
-        raise HTTPException(status_code=user_info.status_code, detail=user_info.json())
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Failed to verify access token')
 
     playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     if not playlist:
-        raise HTTPException(status_code=404, detail='No playlist with that name')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Playlist not found')
     playlist_id = playlist.id
 
     playlist_update = requests.put(
@@ -266,7 +267,7 @@ async def public_to_private(payload: AlterPlaylist,
     if playlist_update.status_code != 200:
         raise HTTPException(status_code=playlist_update.status_code, detail=playlist_update.json())
 
-    return {'message': 'Playlist can now be edited by the owner only'}
+    return {'message': 'Playlist can now be edited by you only'}
 
 
 @play.put('/alter')
@@ -286,7 +287,7 @@ async def alter_playlist(payload: AddTrack,
     )
 
     if user_info.status_code != 200:
-        raise HTTPException(status_code=user_info.status_code, detail=user_info.json())
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Failed to verify access token')
 
     playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     collab = requests.get(
@@ -298,11 +299,11 @@ async def alter_playlist(payload: AddTrack,
 
     if not collab.json().get('collaborative'):
         if playlist.user_id != user.id:
-            raise HTTPException(status_code=403, detail='You are not the owner of this playlist')
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can not contribute to this playlist')
 
     track_id = [f'spotify:track:{track}' for track in payload.id if len(track) == 22]
     if len(track_id) == 0:
-        return "No track was specified!"
+        return {"message": "No track was specified!"}
 
     add_track = requests.post(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
@@ -313,12 +314,87 @@ async def alter_playlist(payload: AddTrack,
     )
 
     if add_track.status_code == 201:
+        time = requests.get(
+            f'https://api.spotify.com/v1/playlists/{playlist.id}',
+            headers={'Authorization': f'Bearer {token}'}
+        )
+
+        if time.status_code != 200:
+            raise HTTPException(status_code=time.status_code, detail=time.json())
+
+        time_sum = sum(item['track']['duration_ms'] for item in time.json()['tracks']['items'])
+        time_sum = time_sum // 1000
+
+        playlist.time = time_sum
         playlist.users.append(user)
         db.add(playlist)
         db.commit()
+
         return {'message': 'Track added to the playlist successfully'}
     else:
         raise HTTPException(status_code=add_track.status_code, detail=add_track.json())
+
+
+@play.put('/alter/d')
+async def remove_tracks(payload: AddTrack,
+                        user: user_dependency,
+                        db: db_dependency,
+                        token: str | None = Cookie(None, alias="access_token")):
+    if not user:
+        return RedirectResponse(url='user/login')
+    if not token:
+        return RedirectResponse(url='user/login')
+
+    user_info = requests.get(
+        'https://api.spotify.com/v1/me',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+    if user_info.status_code != 200:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Failed to verify access token")
+
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
+    if not playlist:
+        return {'message': 'Playlist not found!'}
+
+    track_id = [{'uri': f'spotify:track:{track}'} for track in payload.track_id if len(payload.track_id) == 22]
+    if not track_id:
+        return {'message': 'No valid track found'}
+
+    collab = requests.get(
+        f'https://api.spotify.com/v1/playlists/{payload.id}',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+    if not collab.json().get('collaborative'):
+        if playlist.user_id != user.id:
+            return {'message': 'This playlist is private'}
+
+    remove_track = requests.delete(
+        f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
+        headers={'Authorization': f'Bearer {token}',
+                 'Content-Type': 'application/json'
+                 },
+        json={'tracks': track_id}
+    )
+
+    if remove_track.status_code != 204:
+        raise HTTPException(status_code=remove_track.status_code, detail=remove_track.json())
+
+    time = requests.get(
+        f'https://api.spotify.com/v1/playlists/{playlist.id}',
+        headers={'Authorization': f'Bearer {token}'}
+    )
+
+    if time.status_code != 200:
+        raise HTTPException(status_code=time.status_code, detail=time.json())
+
+    time_sum = sum(item['track']['duration_ms'] for item in time.json()['tracks']['items'])
+    time_sum = time_sum // 1000
+
+    playlist.time = time_sum
+    playlist.users.append(user)
+    db.add(playlist)
+    db.commit()
+    return {'message': 'Tracks removed from the playlist successfully'}
 
 
 # Users should be able to listen to music even if they are not logged-in
@@ -337,7 +413,7 @@ async def listen(payload: Listen,
     )
 
     if user_info.status_code != 200:
-        raise HTTPException(status_code=user_info.status_code, detail='Failed to verify token')
+        raise HTTPException(status_code=user_info.status_code, detail='Failed to verify access token')
 
     playlist = requests.get(
         f'https://api.spotify.com/v1/playlists/{payload.playlist_id}',
@@ -345,7 +421,7 @@ async def listen(payload: Listen,
     )
 
     if playlist.status_code != 200:
-        raise HTTPException(status_code=playlist.status_code, detail='Playlist not found')
+        raise HTTPException(status_code=playlist.status_code, detail=playlist.json())
 
     return {
         "access_token": token,
@@ -376,6 +452,7 @@ async def like_playlist(payload: AlterPlaylist,
         playlist.disliked_by.remove(user)
         playlist.dislike -= 1
 
+    playlist.plays = playlist.likes
     db.add(playlist)
     db.commit()
 
@@ -402,6 +479,7 @@ async def dislike_playlist(payload: AlterPlaylist,
         playlist.liked_by.remove(user)
         playlist.likes -= 1
 
+    playlist.plays = playlist.likes
     db.add(playlist)
     db.commit()
 
