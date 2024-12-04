@@ -56,7 +56,7 @@ async def find_playlists(name: str,
         return RedirectResponse(url='/user/login')
 
     playlist_search = db.query(Playlist).filter(
-        (Playlist.name.ilike(f"%{name}%")) and
+        (Playlist.name.ilike(f"%{name}%")) |
         (func.similarity(Playlist.name, name) > 0.2)
     ).order_by(
         desc(func.similarity(Playlist.name, name))
@@ -215,7 +215,6 @@ async def private_to_public(payload: AlterPlaylist,
     if not playlist:
         raise HTTPException(status_code=404, detail='No playlist with that name')
     playlist_id = playlist.id
-
     playlist_update = requests.put(
         f'https://api.spotify.com/v1/playlists/{playlist_id}/',
         headers={
