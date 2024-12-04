@@ -300,12 +300,16 @@ async def alter_playlist(payload: AddTrack,
         if playlist.user_id != user.id:
             raise HTTPException(status_code=403, detail='You are not the owner of this playlist')
 
+    track_id = [f'spotify:track:{track}' for track in payload.id if len(track) == 22]
+    if len(track_id) == 0:
+        return "No track was specified!"
+
     add_track = requests.post(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
         headers={'Authorization': f'Bearer {token}',
                  'Content-Type': 'application/json'
                  },
-        json={'uris': payload.track_id}
+        json={'uris': track_id}
     )
 
     if add_track.status_code == 201:
@@ -336,7 +340,7 @@ async def listen(payload: Listen,
         raise HTTPException(status_code=user_info.status_code, detail='Failed to verify token')
 
     playlist = requests.get(
-        f'https://api.spotiify.com/v1/playlists/{payload.playlist_id}',
+        f'https://api.spotify.com/v1/playlists/{payload.playlist_id}',
         headers={'Authorization': f'Bearer {token}'}
     )
 
