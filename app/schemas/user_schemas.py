@@ -10,15 +10,15 @@ class Token(BaseModel):
 class PlaylistCreate(BaseModel):
     name: str
     description: str
-    public: bool = True
-    collaborative: bool = False
+    public: bool = False
+    collaborative: bool = True
 
 
 class PlaylistPrivateCreate(BaseModel):
     name: str
     description: str
     public: bool = False
-    collaborative: bool = True
+    collaborative: bool = False
 
 
 class AlterPlaylist(BaseModel):
