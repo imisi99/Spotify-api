@@ -11,14 +11,14 @@ class PlaylistCreate(BaseModel):
     name: str
     description: str
     public: bool = True
-    collaborative: bool = True
+    collaborative: bool = False
 
 
 class PlaylistPrivateCreate(BaseModel):
     name: str
     description: str
     public: bool = False
-    collaborative: bool = False
+    collaborative: bool = True
 
 
 class AlterPlaylist(BaseModel):

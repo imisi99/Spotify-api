@@ -183,7 +183,7 @@ async def create_playlist_private(
         db.add(new)
         db.commit()
 
-        return {'message': 'Playlist created successfully'}
+        return {'Playlist created successfully': playlist.json()}
 
     else:
         raise HTTPException(status_code=playlist.status_code, detail=playlist.json())
@@ -220,7 +220,7 @@ async def private_to_public(payload: AlterPlaylist,
         headers={
             'Authorization': f'Bearer {token}',
             'Content-Type': 'application/json'},
-        json={'collaborative': True,
+        json={'collaborative': False,
               'public': True}
     )
 
@@ -259,7 +259,7 @@ async def public_to_private(payload: AlterPlaylist,
         headers={'Authorization': f'Bearer {token}',
                  'Content-Type': 'application/json'
                  },
-        json={'collaborative': False,
+        json={'collaborative': True,
               'public': False}
     )
 
