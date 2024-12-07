@@ -47,3 +47,8 @@ class AddTrack(BaseModel):
 
 class Listen(BaseModel):
     playlist_id: str
+
+
+class Rate(BaseModel):
+    id: str
+    rating: float

@@ -484,8 +484,6 @@ async def dislike_playlist(payload: AlterPlaylist,
     db.commit()
 
 
-# Users should be able to contribute to a playlist
-# Users should be able to discuss playlist and the likes
 @play.get('/discussion')
 async def get_discussion():
     pass
@@ -499,3 +497,58 @@ async def start_discussion():
 @play.put('/alter_discussion')
 async def make_discussion():
     pass
+
+
+@play.get('/rating')
+async def get_ratings(payload: AlterPlaylist,
+                      user: user_dependency,
+                      db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
+
+    if not playlist:
+        return {'message': 'Playlist not found'}
+    return {'message': f'This playlist has a rating of {playlist.rating}'}
+
+
+@play.put('/alter/r')
+async def add_ratings(payload: Rate,
+                      user: user_dependency,
+                      db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
+
+    if not playlist:
+        return {'message': 'Playlist not found'}
+    if 5.0 < payload.rating or payload.rating < 0.0:
+        return {'message': 'Please enter a valid rating on the scale of 0.'}
+
+    existing_rating = db.query(Rating).filter(Rating.user_id == user.id).filter(Rating.playlist_id == payload.id).first()
+    if not existing_rating:
+        new = Rating(
+            user_id=user.id,
+            playlist_id=playlist.id,
+            rating=payload.rating
+        )
+
+        db.add(new)
+        db.commit()
+    if existing_rating:
+        existing_rating.rating = payload.rating
+
+    count = db.query(Rating).filter(Rating.playlist_id == payload.id).count()
+    avg = playlist.rating
+    avg += payload.rating
+    avg /= count
+    playlist.rating = avg
+
+    db.add(playlist)
+    db.commit()
+
+
+@play.get('/most_vote')
+async def get_most_vote():
