@@ -336,7 +336,10 @@ async def alter_playlist(payload: AddTrack,
         time_sum = time_sum // 1000
 
         playlist.time = time_sum
-        playlist.users.append(user)
+        exist = (db.query(playlist_users).filter(playlist_users.c.playlist_id == playlist.id).
+                 filter(playlist_users.c.user_id == user.id).first())
+        if not exist:
+            playlist.users.append(user)
         db.add(playlist)
         db.commit()
 
@@ -401,7 +404,10 @@ async def remove_tracks(payload: AddTrack,
     time_sum = time_sum // 1000
 
     playlist.time = time_sum
-    playlist.users.append(user)
+    exist = (db.query(playlist_users).filter(playlist_users.c.playlist_id == playlist.id).
+             filter(playlist_users.c.user_id == user.id).first())
+    if not exist:
+        playlist.users.append(user)
     db.add(playlist)
     db.commit()
     return {'message': 'Tracks removed from the playlist successfully'}
@@ -585,7 +591,7 @@ async def get_most_vote(user: user_dependency,
             'id': playlist.id,
             'name': playlist.name,
             'rating': playlist.rating,
-            'likes': playlist.likes,
+            'plays': playlist.plays,
             'score': max(highest_rating, highest_play)
         }
     }
