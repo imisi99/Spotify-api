@@ -10,8 +10,6 @@ import requests
 play = APIRouter()
 
 
-# Users should be able to create and contribute to a playlist
-
 @play.get('/search')
 async def search_tracks_spotify(name: str,
                                 token: str | None = Cookie(None, alias="access_token")):
@@ -85,6 +83,17 @@ async def find_playlists(name: str,
 
     return {'playlists': playlist}
 
+
+@play.get('/search/playlist')
+async def get_playlist_id(payload: AlterPlaylist,
+                          user: user_dependency,
+                          db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
+    if not playlist:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Playlist not found')
+    return playlist
 
 @play.post('/create')
 async def create_playlist(payload: PlaylistCreate,
@@ -551,4 +560,31 @@ async def add_ratings(payload: Rate,
 
 
 @play.get('/most_vote')
-async def get_most_vote():
+async def get_most_vote(user: user_dependency,
+                        db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    rate = db.query(Playlist).order_by(Playlist.rating.desc()).first()
+    like = db.query(Playlist).order_by(Playlist.likes.desc()).first()
+
+    def compute_score(rating, likes, rw=0.85, lw=0.15):
+        return (rating * rw) + (likes * lw)
+
+    highest_rating = compute_score(rate.rating, rate.likes)
+    highest_likes = compute_score(like.rating, like.likes)
+
+    if highest_rating > highest_likes:
+        playlist = rate
+    else:
+        playlist = like
+
+    return {
+        'top_playlist': {
+            'id': playlist.id,
+            'name': playlist.name,
+            'rating': playlist.rating,
+            'likes': playlist.likes,
+            'score': max(highest_rating, highest_likes)
+        }
+    }
