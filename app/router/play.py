@@ -95,6 +95,7 @@ async def get_playlist_id(payload: AlterPlaylist,
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Playlist not found')
     return playlist
 
+
 @play.post('/create')
 async def create_playlist(payload: PlaylistCreate,
                           user: user_dependency,
@@ -310,7 +311,7 @@ async def alter_playlist(payload: AddTrack,
         if playlist.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can not contribute to this playlist')
 
-    track_id = [f'spotify:track:{track}' for track in payload.id if len(track) == 22]
+    track_id = [f'spotify:track:{track}' for track in payload.track_id if len(track) == 22]
     if len(track_id) == 0:
         return {"message": "No track was specified!"}
 
@@ -365,7 +366,7 @@ async def remove_tracks(payload: AddTrack,
     if not playlist:
         return {'message': 'Playlist not found!'}
 
-    track_id = [{'uri': f'spotify:track:{track}'} for track in payload.track_id if len(payload.track_id) == 22]
+    track_id = [{'uri': f'spotify:track:{track}'} for track in payload.track_id if len(track) == 22]
     if not track_id:
         return {'message': 'No valid track found'}
 
@@ -534,9 +535,10 @@ async def add_ratings(payload: Rate,
     if not playlist:
         return {'message': 'Playlist not found'}
     if 5.0 < payload.rating or payload.rating < 0.0:
-        return {'message': 'Please enter a valid rating on the scale of 0.'}
+        return {'message': 'Please enter a valid rating on the scale of 0.0 to 5.0'}
 
-    existing_rating = db.query(Rating).filter(Rating.user_id == user.id).filter(Rating.playlist_id == payload.id).first()
+    existing_rating = db.query(Rating).filter(Rating.user_id == user.id).filter(
+        Rating.playlist_id == payload.id).first()
     if not existing_rating:
         new = Rating(
             user_id=user.id,
@@ -545,13 +547,12 @@ async def add_ratings(payload: Rate,
         )
 
         db.add(new)
-        db.commit()
     if existing_rating:
         existing_rating.rating = payload.rating
+        db.commit()
 
     count = db.query(Rating).filter(Rating.playlist_id == payload.id).count()
-    avg = playlist.rating
-    avg += payload.rating
+    avg = db.query(func.sum(Rating.rating)).scalar()
     avg /= count
     playlist.rating = avg
 
@@ -566,18 +567,18 @@ async def get_most_vote(user: user_dependency,
         return RedirectResponse(url='/user/login')
 
     rate = db.query(Playlist).order_by(Playlist.rating.desc()).first()
-    like = db.query(Playlist).order_by(Playlist.likes.desc()).first()
+    plays = db.query(Playlist).order_by(Playlist.plays.desc()).first()
 
-    def compute_score(rating, likes, rw=0.85, lw=0.15):
-        return (rating * rw) + (likes * lw)
+    def compute_score(rating, played, rw=0.85, pw=0.15):
+        return (rating * rw) + (played * pw)
 
     highest_rating = compute_score(rate.rating, rate.likes)
-    highest_likes = compute_score(like.rating, like.likes)
+    highest_play = compute_score(plays.rating, plays.likes)
 
-    if highest_rating > highest_likes:
+    if highest_rating > highest_play:
         playlist = rate
     else:
-        playlist = like
+        playlist = plays
 
     return {
         'top_playlist': {
@@ -585,6 +586,6 @@ async def get_most_vote(user: user_dependency,
             'name': playlist.name,
             'rating': playlist.rating,
             'likes': playlist.likes,
-            'score': max(highest_rating, highest_likes)
+            'score': max(highest_rating, highest_play)
         }
     }
