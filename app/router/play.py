@@ -10,6 +10,11 @@ import requests
 play = APIRouter()
 
 
+def search_existing(track_id, track_list, track_id_list):
+    if track_id in track_list:
+        track_id_list.remove(track_id)
+
+
 @play.get('/search')
 async def search_tracks_spotify(name: str,
                                 token: str | None = Cookie(None, alias="access_token")):
@@ -315,6 +320,17 @@ async def alter_playlist(payload: AddTrack,
     if len(track_id) == 0:
         return {"message": "No track was specified!"}
 
+    existing_track = requests.get(f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
+                                  headers={'Authorization': f'Bearer {token}'}
+                                  )
+    if existing_track.status_code == 200:
+        track = existing_track.json().get('items', [])
+        track = track['track']['id']
+
+        track_list = [f'spotify:track:{fip}' for fip in track]
+        for item in track_id:
+            search_existing(item, track_list, track_id)
+
     add_track = requests.post(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
         headers={'Authorization': f'Bearer {token}',
@@ -380,6 +396,17 @@ async def remove_tracks(payload: AddTrack,
     if not collab.json().get('collaborative'):
         if playlist.user_id != user.id:
             return {'message': 'This playlist is private'}
+
+    existing_track = requests.get(f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
+                                  headers={'Authorization': f'Bearer {token}'}
+                                  )
+    if existing_track.status_code == 200:
+        track = existing_track.json().get('items', [])
+        track = track['track']['id']
+
+        track_list = [f'spotify:track:{fip}' for fip in track]
+        for item in track_id:
+            search_existing(item, track_list, track_id)
 
     remove_track = requests.delete(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
@@ -500,19 +527,49 @@ async def dislike_playlist(payload: AlterPlaylist,
     db.commit()
 
 
-@play.get('/discussion')
-async def get_discussion():
-    pass
+@play.get('/discussion', response_model=DiscussionResponse)
+async def get_discussion(payload: AlterPlaylist,
+                         user: user_dependency,
+                         db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    discussion = db.query(Discussion).filter(Discussion.playlist_id == payload.id).all()
+    # order by the timestamp
+    if not discussion:
+        return {'message': 'No comments available for the playlist be the first'}
+
+    comments = []
+    for comment in discussion:
+        discuss = DiscussionReturn(
+            comment=comment.comment,
+            time=comment.time_stamp
+        )
+
+        comments.append(discuss)
+
+    return {'comments': comments}
 
 
 @play.post('/start_discussion')
-async def start_discussion():
-    pass
+async def start_discussion(payload: Comment,
+                           user: user_dependency,
+                           db: db_dependency
+                           ):
+    if not user:
+        return RedirectResponse(url='/user/login')
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
+    if not playlist:
+        return {'message': 'Playlist not found'}
 
+    new_chat = Discussion(
+        user_id=user.id,
+        playlist_id=playlist.id,
+        comment=payload.comment
+    )
 
-@play.put('/alter_discussion')
-async def make_discussion():
-    pass
+    db.add(new_chat)
+    db.commit()
 
 
 @play.get('/rating')

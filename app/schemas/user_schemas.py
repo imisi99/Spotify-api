@@ -36,6 +36,15 @@ class PlaylistReturn(BaseModel):
     comments: int
 
 
+class DiscussionReturn(BaseModel):
+    comment: str
+    time: str
+
+
+class DiscussionResponse(BaseModel):
+    comments: List[DiscussionReturn]
+
+
 class PlaylistResponse(BaseModel):
     playlists: List[PlaylistReturn]
 
@@ -52,3 +61,8 @@ class Listen(BaseModel):
 class Rate(BaseModel):
     id: str
     rating: float
+
+
+class Comment(BaseModel):
+    id: str
+    comment: str
