@@ -328,8 +328,8 @@ async def alter_playlist(payload: AddTrack,
                                   headers={'Authorization': f'Bearer {token}'}
                                   )
     if existing_track.status_code == 200:
-        track = existing_track.json().get('items', [])
-        track = track['track']['id']
+        items = existing_track.json().get('items', [])
+        track = [item['track']['id'] for item in items if 'track' in item]
 
         track_list = [f'spotify:track:{fip}' for fip in track]
         for item in track_id:
@@ -405,8 +405,8 @@ async def remove_tracks(payload: AddTrack,
                                   headers={'Authorization': f'Bearer {token}'}
                                   )
     if existing_track.status_code == 200:
-        track = existing_track.json().get('items', [])
-        track = track['track']['id']
+        items = existing_track.json().get('items', [])
+        track = [item['track']['id'] for item in items if 'track' in item]
 
         track_list = [f'spotify:track:{fip}' for fip in track]
         for item in track_id:
