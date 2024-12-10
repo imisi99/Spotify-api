@@ -330,6 +330,7 @@ async def alter_playlist(payload: AddTrack,
                                   headers={'Authorization': f'Bearer {token}'}
                                   )
     track_id_l = None
+    track_list = None
     if existing_track.status_code == 200:
         items = existing_track.json().get('items', [])
         track = [item['track']['id'] for item in items if 'track' in item]
@@ -366,7 +367,7 @@ async def alter_playlist(payload: AddTrack,
         db.add(playlist)
         db.commit()
 
-        return {'message': 'Track added to the playlist successfully'}
+        return {track_id_l: track_list}
     else:
         raise HTTPException(status_code=add_track.status_code, detail=add_track.json())
 
@@ -423,9 +424,9 @@ async def remove_tracks(payload: AddTrack,
         json={'tracks': track_id}
     )
 
-    if remove_track.status_code != 204:
+    if remove_track.status_code != 200:
         raise HTTPException(status_code=remove_track.status_code,
-                            detail=f"Failed to delete the tracks {remove_track.status_code}")
+                            detail=remove_track.json())
 
     time = requests.get(
         f'https://api.spotify.com/v1/playlists/{playlist.id}',
