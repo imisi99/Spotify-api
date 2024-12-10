@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Cookie, HTTPException
 from fastapi.responses import RedirectResponse
 from starlette import status
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
 from ..schemas.config import db_dependency, user_dependency
 from ..schemas.model import *
 from ..schemas.user_schemas import *
@@ -534,10 +534,10 @@ async def get_discussion(payload: AlterPlaylist,
     if not user:
         return RedirectResponse(url='/user/login')
 
-    discussion = db.query(Discussion).filter(Discussion.playlist_id == payload.id).all()
-    # order by the timestamp
+    discussion = db.query(Discussion).filter(Discussion.playlist_id == payload.id).order_by(asc(Discussion.time_stamp)).all()
+
     if not discussion:
-        return {'message': 'No comments available for the playlist be the first'}
+        return {'message': 'No comments available for the playlist be the first to comment'}
 
     comments = []
     for comment in discussion:
@@ -568,6 +568,7 @@ async def start_discussion(payload: Comment,
         comment=payload.comment
     )
 
+    playlist.comments += 1
     db.add(new_chat)
     db.commit()
 

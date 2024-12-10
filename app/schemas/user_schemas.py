@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, List
-
+from datetime import datetime
 
 class Token(BaseModel):
     access_token: str
@@ -38,15 +38,17 @@ class PlaylistReturn(BaseModel):
 
 class DiscussionReturn(BaseModel):
     comment: str
-    time: str
+    time: datetime
 
 
 class DiscussionResponse(BaseModel):
-    comments: List[DiscussionReturn]
+    comments: Optional[List[DiscussionReturn]] = None
+    message: Optional[str] = None
 
 
 class PlaylistResponse(BaseModel):
-    playlists: List[PlaylistReturn]
+    playlists: Optional[List[PlaylistReturn]] = None
+    message: Optional[str] = None
 
 
 class AddTrack(BaseModel):
