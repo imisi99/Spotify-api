@@ -140,8 +140,10 @@ async def create_playlist(payload: PlaylistCreate,
         new = Playlist(
             id=playlist_id,
             name=payload.name,
-            user_id=user.id
+            user_id=user.id,
         )
+
+        new.users.append(user)
 
         db.add(new)
         db.commit()
@@ -192,8 +194,10 @@ async def create_playlist_private(
         new = Playlist(
             id=playlist_id,
             name=payload.name,
-            user_id=user.id
+            user_id=user.id,
         )
+
+        new.users.append(user)
 
         db.add(new)
         db.commit()
