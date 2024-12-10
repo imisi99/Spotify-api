@@ -13,6 +13,7 @@ play = APIRouter()
 def search_existing(track_id, track_list, track_id_list):
     if track_id in track_list:
         track_id_list.remove(track_id)
+    return track_id_list
 
 
 @play.get('/search')
@@ -320,27 +321,29 @@ async def alter_playlist(payload: AddTrack,
         if playlist.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can not contribute to this playlist')
 
-    track_id = [f'spotify:track:{track}' for track in payload.track_id if len(track) == 22]
+    track_id = set([f'spotify:track:{track}' for track in payload.track_id if len(track) == 22])
+    track_id = list(track_id)
     if len(track_id) == 0:
         return {"message": "No track was specified!"}
 
     existing_track = requests.get(f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
                                   headers={'Authorization': f'Bearer {token}'}
                                   )
+    track_id_l = None
     if existing_track.status_code == 200:
         items = existing_track.json().get('items', [])
         track = [item['track']['id'] for item in items if 'track' in item]
 
         track_list = [f'spotify:track:{fip}' for fip in track]
         for item in track_id:
-            search_existing(item, track_list, track_id)
+            track_id_l = search_existing(item, track_list, track_id)
 
     add_track = requests.post(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
         headers={'Authorization': f'Bearer {token}',
                  'Content-Type': 'application/json'
                  },
-        json={'uris': track_id}
+        json={'uris': track_id_l}
     )
 
     if add_track.status_code == 201:
@@ -421,7 +424,8 @@ async def remove_tracks(payload: AddTrack,
     )
 
     if remove_track.status_code != 204:
-        raise HTTPException(status_code=remove_track.status_code, detail=remove_track.json())
+        raise HTTPException(status_code=remove_track.status_code,
+                            detail=f"Failed to delete the tracks {remove_track.status_code}")
 
     time = requests.get(
         f'https://api.spotify.com/v1/playlists/{playlist.id}',
@@ -538,7 +542,8 @@ async def get_discussion(payload: AlterPlaylist,
     if not user:
         return RedirectResponse(url='/user/login')
 
-    discussion = db.query(Discussion).filter(Discussion.playlist_id == payload.id).order_by(asc(Discussion.time_stamp)).all()
+    discussion = db.query(Discussion).filter(Discussion.playlist_id == payload.id).order_by(
+        asc(Discussion.time_stamp)).all()
 
     if not discussion:
         return {'message': 'No comments available for the playlist be the first to comment'}
