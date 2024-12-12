@@ -321,30 +321,16 @@ async def alter_playlist(payload: AddTrack,
         if playlist.user_id != user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='You can not contribute to this playlist')
 
-    track_id = set([f'spotify:track:{track}' for track in payload.track_id if len(track) == 22])
-    track_id = list(track_id)
+    track_id = [f'spotify:track:{track}' for track in payload.track_id if len(track) == 22]
     if len(track_id) == 0:
         return {"message": "No track was specified!"}
-
-    existing_track = requests.get(f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
-                                  headers={'Authorization': f'Bearer {token}'}
-                                  )
-    track_id_l = None
-    track_list = None
-    if existing_track.status_code == 200:
-        items = existing_track.json().get('items', [])
-        track = [item['track']['id'] for item in items if 'track' in item]
-
-        track_list = [f'spotify:track:{fip}' for fip in track]
-        for item in track_id:
-            track_id_l = search_existing(item, track_list, track_id)
 
     add_track = requests.post(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
         headers={'Authorization': f'Bearer {token}',
                  'Content-Type': 'application/json'
                  },
-        json={'uris': track_id_l}
+        json={'uris': track_id}
     )
 
     if add_track.status_code == 201:
@@ -367,7 +353,7 @@ async def alter_playlist(payload: AddTrack,
         db.add(playlist)
         db.commit()
 
-        return {track_id_l: track_list}
+        return {'message': 'Track added to playlist successfully'}
     else:
         raise HTTPException(status_code=add_track.status_code, detail=add_track.json())
 
@@ -405,17 +391,6 @@ async def remove_tracks(payload: AddTrack,
         if playlist.user_id != user.id:
             return {'message': 'This playlist is private'}
 
-    existing_track = requests.get(f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
-                                  headers={'Authorization': f'Bearer {token}'}
-                                  )
-    if existing_track.status_code == 200:
-        items = existing_track.json().get('items', [])
-        track = [item['track']['id'] for item in items if 'track' in item]
-
-        track_list = [f'spotify:track:{fip}' for fip in track]
-        for item in track_id:
-            search_existing(item, track_list, track_id)
-
     remove_track = requests.delete(
         f'https://api.spotify.com/v1/playlists/{playlist.id}/tracks',
         headers={'Authorization': f'Bearer {token}',
@@ -449,7 +424,46 @@ async def remove_tracks(payload: AddTrack,
     return {'message': 'Tracks removed from the playlist successfully'}
 
 
-# Users should be able to listen to music even if they are not logged-in
+@play.delete('/remove/track')
+async def remove_playlist(payload: AlterPlaylist,
+                          user: user_dependency,
+                          db: db_dependency,
+                          token: str | None = Cookie(None, alias="access_token")):
+    if not user:
+        return RedirectResponse(url='/user/login')
+    if not token:
+        return RedirectResponse(url='/user/login')
+
+    playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
+    if not playlist:
+        return {'message': 'Playlist not found'}
+
+    collab = requests.get(f'https://api.spotify.com/playlist{playlist.id}',
+                          headers={'Authorization': f'Bearer {token}'})
+
+    if not collab:
+        raise HTTPException(status_code=collab.status_code, detail=collab.json())
+
+    if not collab.json().get('collaborative'):
+        if user.id != playlist.user_id:
+            raise HTTPException(status_code=403, detail="You don't have permission to delete this playlist")
+
+    remove = requests.delete(f'https://api.spotify.com/v1/playlist/{playlist.id}/followers',
+                             headers={'Authorization': f'Bearer {token}'}
+                             )
+
+    if remove.status_code == 404:
+        db.delete(playlist)
+        db.commit()
+        return {'message': 'Playlist already deleted on spotify'}
+    elif remove.status_code == 200:
+        db.delete(playlist)
+        db.commit()
+        return {'message': 'Playlist deleted successfully'}
+    else:
+        raise HTTPException(status_code=remove.status_code, detail=remove.json())
+
+
 @play.get('/listen')
 async def listen(payload: Listen,
                  user: user_dependency,
