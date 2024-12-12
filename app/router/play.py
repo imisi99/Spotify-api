@@ -149,6 +149,11 @@ async def create_playlist(payload: PlaylistCreate,
         db.add(new)
         db.commit()
 
+        add_user = db.query(UserModel).filter(UserModel.id == user.id).first()
+        if not add_user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
+        add_user.created_playlist += 1
+
         return {'message': 'Playlist created successfully'}
 
     else:
@@ -197,6 +202,11 @@ async def create_playlist_private(
             name=payload.name,
             user_id=user.id,
         )
+
+        add_user = db.query(UserModel).filter(UserModel.id == user.id).first()
+        if not add_user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
+        add_user.created_playlist += 1
 
         new.users.append(user)
 
@@ -448,7 +458,7 @@ async def remove_playlist(payload: AlterPlaylist,
         if user.id != playlist.user_id:
             raise HTTPException(status_code=403, detail="You don't have permission to delete this playlist")
 
-    remove = requests.delete(f'https://api.spotify.com/v1/playlist/{playlist.id}/followers',
+    remove = requests.delete(f'https://api.spotify.com/v1/playlists/{playlist.id}/followers',
                              headers={'Authorization': f'Bearer {token}'}
                              )
 
