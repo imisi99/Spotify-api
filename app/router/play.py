@@ -448,7 +448,7 @@ async def remove_playlist(payload: AlterPlaylist,
     if not playlist:
         return {'message': 'Playlist not found'}
 
-    collab = requests.get(f'https://api.spotify.com/playlist{playlist.id}',
+    collab = requests.get(f'https://api.spotify.com/v1/playlists/{playlist.id}',
                           headers={'Authorization': f'Bearer {token}'})
 
     if not collab:
