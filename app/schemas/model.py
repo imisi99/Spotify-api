@@ -21,6 +21,12 @@ playlist_dislikes = Table(
     Column('user_id', Integer, ForeignKey('user.id', ondelete="CASCADE"), primary_key=True)
 )
 
+playlist_follows = Table(
+    'user_follows', data.metadata,
+    Column('follower_id', Integer, ForeignKey('user.id', ondelete="CASCADE"), primary_key=True),
+    Column('following_id', Integer, ForeignKey('user.id', onedelete="CASCADE"), primary_key=True)
+)
+
 
 class UserModel(data):
     __tablename__ = 'user'
@@ -33,12 +39,14 @@ class UserModel(data):
     following = Column(Integer, nullable=False, default=0)
     level = Column(String, nullable=False, default="rookie")
 
-    playlists = relationship('Playlist', secondary=playlist_users, back_populates='users')
+    playlists = relationship('Playlist', secondary=playlist_users, back_populates='user')
+
     ratings = relationship('Rating', back_populates='user')
     comments = relationship('Discussion', back_populates='user')
 
     liked_playlists = relationship('Playlist', secondary=playlist_likes, back_populates='liked_by')
     disliked_playlists = relationship('Playlist', secondary=playlist_dislikes, back_populates='disliked_by')
+
 
 
 class Playlist(data):

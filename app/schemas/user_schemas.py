@@ -69,3 +69,7 @@ class Rate(BaseModel):
 class Comment(BaseModel):
     id: str
     comment: str
+
+
+class UserID(BaseModel):
+    id: int

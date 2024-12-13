@@ -146,13 +146,13 @@ async def create_playlist(payload: PlaylistCreate,
 
         new.users.append(user)
 
-        db.add(new)
-        db.commit()
-
         add_user = db.query(UserModel).filter(UserModel.id == user.id).first()
         if not add_user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
         add_user.created_playlist += 1
+
+        db.add(new)
+        db.commit()
 
         return {'message': 'Playlist created successfully'}
 
@@ -463,10 +463,20 @@ async def remove_playlist(payload: AlterPlaylist,
                              )
 
     if remove.status_code == 404:
+        add_user = db.query(UserModel).filter(UserModel.id == user.id).first()
+        if not add_user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
+        add_user.created_playlist -= 1
+
         db.delete(playlist)
         db.commit()
         return {'message': 'Playlist already deleted on spotify'}
     elif remove.status_code == 200:
+        add_user = db.query(UserModel).filter(UserModel.id == user.id).first()
+        if not add_user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
+        add_user.created_playlist -= 1
+
         db.delete(playlist)
         db.commit()
         return {'message': 'Playlist deleted successfully'}

@@ -169,6 +169,47 @@ def get_user_profile(db: db_dependency, user: user_dependency, token: str | None
         raise HTTPException(status_code=user_info.status_code, detail='Failed to verify access token')
 
 
+@user.put('/follow')
+async def follow_user(payload: UserID,
+                      user: user_dependency,
+                      db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    follow = db.query(UserModel).filter(UserModel.id == payload.id).first()
+    user_detail = db.query(UserModel).filter(UserModel == user.id).first()
+    if not follow:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+    if not user_detail:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
+
+    user_detail.following += 1
+    follow.followers += 1
+
+    db.commit()
+
+
+@user.put('/unfollow')
+async def unfollow_user(payload: UserID,
+                        user: user_dependency,
+                        db: db_dependency):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    follow = db.query(UserModel).filter(UserModel.id == payload.id).first()
+    user_detail = db.query(UserModel).filter(UserModel.id == user.id).first()
+
+    if not follow:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+    if not user_detail:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
+
+    user_detail.following -= 1
+    follow.followers -= 1
+
+    db.commit()
+
+
 @user.get('/logout')
 def logout(response: Response):
     response.delete_cookie('jwt_token')
