@@ -4,7 +4,7 @@ from starlette import status
 from dotenv import load_dotenv
 from ..schemas.config import db_dependency, user_dependency, authentication, welcome_email
 from ..schemas.user_schemas import *
-from ..schemas.model import UserModel
+from ..schemas.model import UserModel, Following
 from datetime import timedelta
 import string
 import random
@@ -177,15 +177,26 @@ async def follow_user(payload: UserID,
         return RedirectResponse(url='/user/login')
 
     follow = db.query(UserModel).filter(UserModel.id == payload.id).first()
-    user_detail = db.query(UserModel).filter(UserModel == user.id).first()
+    user_detail = db.query(UserModel).filter(UserModel.id == user.id).first()
     if not follow:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
     if not user_detail:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
 
+    exist = db.query(Following).filter(Following.following == user.id).filter(Following.follower == payload.id).first()
+
+    if exist:
+        return
+
+    new = Following(
+        following=user.id,
+        follower=payload.id
+    )
+
     user_detail.following += 1
     follow.followers += 1
 
+    db.add(new)
     db.commit()
 
 
@@ -204,9 +215,13 @@ async def unfollow_user(payload: UserID,
     if not user_detail:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Unauthorized user')
 
+    exist = db.query(Following).filter(Following.following == user.id).filter(Following.follower == payload.id).first()
+    if not exist:
+        return
     user_detail.following -= 1
     follow.followers -= 1
 
+    db.delete(exist)
     db.commit()
 
 
