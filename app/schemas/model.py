@@ -46,7 +46,7 @@ class UserModel(data):
 
     liked_playlists = relationship('Playlist', secondary=playlist_likes, back_populates='liked_by')
     disliked_playlists = relationship('Playlist', secondary=playlist_dislikes, back_populates='disliked_by')
-
+    follows = relationship('UserModel', secondary=playlist_follows, back_populates='')
 
 
 class Playlist(data):
