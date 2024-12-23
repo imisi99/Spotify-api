@@ -33,7 +33,7 @@ class UserModel(data):
     following = Column(Integer, nullable=False, default=0)
     level = Column(String, nullable=False, default="rookie")
 
-    playlists = relationship('Playlist', secondary=playlist_users, back_populates='user')
+    playlists = relationship('Playlist', secondary=playlist_users, back_populates='users')
 
     ratings = relationship('Rating', back_populates='user')
     comments = relationship('Discussion', back_populates='user')
