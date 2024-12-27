@@ -176,6 +176,8 @@ async def follow_user(payload: UserID,
     if not user:
         return RedirectResponse(url='/user/login')
 
+    if user.id == payload.id:
+        return
     follow = db.query(UserModel).filter(UserModel.id == payload.id).first()
     user_detail = db.query(UserModel).filter(UserModel.id == user.id).first()
     if not follow:
