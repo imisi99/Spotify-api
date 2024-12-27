@@ -487,6 +487,7 @@ async def remove_playlist(payload: AlterPlaylist,
 @play.get('/listen')
 async def listen(payload: Listen,
                  user: user_dependency,
+                 db: db_dependency,
                  token: str | None = Cookie(None, alias="access_token")):
     if not user:
         return RedirectResponse(url='/user/login')
@@ -508,6 +509,13 @@ async def listen(payload: Listen,
 
     if playlist.status_code != 200:
         raise HTTPException(status_code=playlist.status_code, detail=playlist.json())
+
+    plays = db.query(Playlist).filter(Playlist.id == payload.playlist_id).first()
+    if plays:
+        plays.plays += 1
+
+        db.add(plays)
+        db.commit()
 
     return {
         "access_token": token,
@@ -538,7 +546,6 @@ async def like_playlist(payload: AlterPlaylist,
         playlist.disliked_by.remove(user)
         playlist.dislike -= 1
 
-    playlist.plays = playlist.likes
     db.add(playlist)
     db.commit()
 
@@ -565,7 +572,6 @@ async def dislike_playlist(payload: AlterPlaylist,
         playlist.liked_by.remove(user)
         playlist.likes -= 1
 
-    playlist.plays = playlist.likes
     db.add(playlist)
     db.commit()
 
@@ -657,7 +663,7 @@ async def add_ratings(payload: Rate,
         db.add(new)
     if existing_rating:
         existing_rating.rating = payload.rating
-        db.commit()
+    db.commit()
 
     count = db.query(Rating).filter(Rating.playlist_id == payload.id).count()
     avg = db.query(func.sum(Rating.rating)).scalar()
@@ -680,8 +686,8 @@ async def get_most_vote(user: user_dependency,
     def compute_score(rating, played, rw=0.85, pw=0.15):
         return (rating * rw) + (played * pw)
 
-    highest_rating = compute_score(rate.rating, rate.likes)
-    highest_play = compute_score(plays.rating, plays.likes)
+    highest_rating = compute_score(rate.rating, rate.plays)
+    highest_play = compute_score(plays.rating, plays.plays)
 
     if highest_rating > highest_play:
         playlist = rate
