@@ -35,8 +35,6 @@ class UserModel(data):
 
     playlists = relationship('Playlist', secondary=playlist_users, back_populates='users')
 
-    ratings = relationship('Rating', back_populates='user')
-
     liked_playlists = relationship('Playlist', secondary=playlist_likes, back_populates='liked_by')
     disliked_playlists = relationship('Playlist', secondary=playlist_dislikes, back_populates='disliked_by')
 
@@ -56,8 +54,6 @@ class Playlist(data):
     comments = Column(Integer, nullable=False, default=0)
 
     users = relationship('UserModel', secondary=playlist_users, back_populates='playlists')
-
-    ratings = relationship('Rating', back_populates='playlist')
 
     liked_by = relationship('UserModel', secondary=playlist_likes, back_populates='liked_playlists')
     disliked_by = relationship('UserModel', secondary=playlist_dislikes, back_populates='disliked_playlists')
@@ -82,9 +78,6 @@ class Rating(data):
     rating = Column(Float, nullable=False)
 
     __table_args__ = (UniqueConstraint('user_id', 'playlist_id', name='unique_user_playlist'),)
-
-    user = relationship('UserModel', back_populates='ratings')
-    playlist = relationship('Playlist', back_populates='ratings')
 
 
 class Following(data):
