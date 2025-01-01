@@ -36,7 +36,6 @@ class UserModel(data):
     playlists = relationship('Playlist', secondary=playlist_users, back_populates='users')
 
     ratings = relationship('Rating', back_populates='user')
-    comments = relationship('Discussion', back_populates='user')
 
     liked_playlists = relationship('Playlist', secondary=playlist_likes, back_populates='liked_by')
     disliked_playlists = relationship('Playlist', secondary=playlist_dislikes, back_populates='disliked_by')
@@ -58,7 +57,6 @@ class Playlist(data):
 
     users = relationship('UserModel', secondary=playlist_users, back_populates='playlists')
 
-    comments_relationship = relationship('Discussion', back_populates='playlist')
     ratings = relationship('Rating', back_populates='playlist')
 
     liked_by = relationship('UserModel', secondary=playlist_likes, back_populates='liked_playlists')
