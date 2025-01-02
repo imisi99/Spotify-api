@@ -1,4 +1,5 @@
 import os
+import requests
 from fastapi.responses import RedirectResponse
 from .database import begin
 from .model import UserModel
@@ -97,3 +98,10 @@ def welcome_email(user_email, user_firstname):
 
 
 user_dependency = Annotated[Session, Depends(get_user)]
+
+
+def check_expired_token(token: str):
+    exp = requests.get("https://api.spotify.com/v1/me",
+                       headers={'Authorization': f'Bearer {token}'})
+
+    return exp.status_code == 401

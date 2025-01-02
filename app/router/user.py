@@ -70,7 +70,8 @@ def callback(request: Request, db: db_dependency):
     if token_request.status_code == 200:
         token_info = token_request.json()
         request.session["access_token"] = token_info['access_token']
-
+        request.session["refresh_token"] = token_info['refresh_token']
+        refresh_token = request.session.get('access_token')
         token = request.session.get('access_token')
 
         user_info = requests.get(
@@ -118,13 +119,22 @@ def callback(request: Request, db: db_dependency):
             key='jwt_token',
             value=jwt_token,
             httponly=True,
-            max_age=60 * 60 * 24 * 14,
+            max_age=60 * 60 * 24 * 30,
             secure=True,
             samesite='lax'
         )
         response.set_cookie(
             key='access_token',
             value=token,
+            max_age=60 * 60 * 24 * 30,
+            httponly=True,
+            secure=True,
+            samesite='lax'
+        )
+
+        response.set_cookie(
+            key='refresh_token',
+            value=refresh_token,
             max_age=60 * 60 * 24 * 30,
             httponly=True,
             secure=True,
@@ -177,6 +187,42 @@ def get_user_profile(db: db_dependency, user: user_dependency, token: str | None
         return profile
     else:
         raise HTTPException(status_code=user_info.status_code, detail='Failed to verify access token')
+
+
+@user.get('/refresh_token')
+async def refresh_access_token(request: Request):
+    refresh_token = request.cookies.get('refresh_token')
+    if not refresh_token:
+        return RedirectResponse(url='/user/login')
+
+    new_access_token = requests.get(
+        'https://accounts.spotify.com/api/token',
+        data={
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token,
+            'client_id': client_id,
+            'client_secret': client_secret
+        },
+        headers={'content-type': 'application/x-www-form-urlencoded'}
+    )
+
+    if new_access_token.status_code == 200:
+        token_info = new_access_token.json()
+        access_token = token_info['access_token']
+
+        response = JSONResponse(content={'message': 'Access Token Refreshed Successfully'})
+        response.set_cookie(
+            key='access_token',
+            value=access_token,
+            max_age=60 * 60 * 24 * 30,
+            httponly=True,
+            secure=True,
+            samesite='lax'
+        )
+
+        return access_token
+    else:
+        raise HTTPException(status_code=new_access_token.status_code, detail='Failed to refresh access token')
 
 
 @user.put('/follow')
@@ -259,11 +305,12 @@ def delete_account(user: user_dependency,
 
     response.delete_cookie('jwt_token')
     response.delete_cookie('access_token')
-    return RedirectResponse(url='/')
+    return RedirectResponse(url='/', status_code=status.HTTP_303_SEE_OTHER)
 
 
 @user.get('/logout')
-def logout(response: Response):
+def logout():
+    response = RedirectResponse(url='/')
     response.delete_cookie('jwt_token')
     response.delete_cookie('access_token')
-    return RedirectResponse(url='/')
+    return response

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Cookie, HTTPException
+from fastapi import APIRouter, Cookie, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from starlette import status
 from sqlalchemy import desc, asc
-from ..schemas.config import db_dependency, user_dependency
+from .user import refresh_access_token
+from ..schemas.config import db_dependency, user_dependency, check_expired_token
 from ..schemas.model import *
 from ..schemas.user_schemas import *
 import requests
@@ -21,9 +22,13 @@ def search_existing(track_id, track_list, track_id_list):
 
 @play.get('/search')
 async def search_tracks_spotify(name: str,
+                                request: Request,
                                 token: str | None = Cookie(None, alias="access_token")):
     if not token:
         return RedirectResponse(url='/user/login')
+
+    if check_expired_token(token):
+        token = await refresh_access_token(request)
 
     search_response = requests.get(
         'https://api.spotify.com/v1/search',
