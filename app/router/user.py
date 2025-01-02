@@ -11,9 +11,12 @@ import random
 import urllib.parse
 import requests
 import os
+import logging
 import base64
 
 load_dotenv()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 user = APIRouter()
 
@@ -88,11 +91,18 @@ def callback(request: Request, db: db_dependency):
                 )
                 db.add(new_user)
                 db.commit()
+                db.refresh(new_user)
 
+                user_det = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
+
+                logging.info(f"A new user with id: {user_det.id} and username: {user_det.username} has been created")
+
+                if not user_det:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Error in handling user info try again')
                 if welcome_email(user_data.get('email'), user_data.get('display_name')):
-                    pass
+                    logging.info(f"The welcome email has been sent to user {user_det.id}")
                 else:
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Unauthorized user')
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Failed to send welcome email')
 
         else:
             raise HTTPException(status_code=user_info.status_code, detail='failed to fetch user info')
@@ -225,6 +235,31 @@ async def unfollow_user(payload: UserID,
 
     db.delete(exist)
     db.commit()
+
+
+@user.delete('/delete/account')
+def delete_account(user: user_dependency,
+                   db: db_dependency,
+                   response: Response,
+                   message: str):
+    if not user:
+        return RedirectResponse(url='/user/login')
+
+    user_acc = db.query(UserModel).filter(UserModel.id == user.id).first()
+    if not user_acc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='User not found')
+
+    if message.strip() != f'I {user_acc.username} want to delete my account':
+        return {'message': 'Invalid confirmation message'}
+
+    db.delete(user_acc)
+    db.commit()
+
+    logging.info(f"User account with id: {user_acc.id} and username: {user_acc.username} has been deleted.")
+
+    response.delete_cookie('jwt_token')
+    response.delete_cookie('access_token')
+    return RedirectResponse(url='/')
 
 
 @user.get('/logout')

@@ -63,7 +63,7 @@ class Discussion(data):
     __tablename__ = "comments"
 
     id = Column(Integer, index=True, primary_key=True)
-    playlist_id = Column(String, ForeignKey("playlist.id", ondelete="CASCADE"))
+    playlist_id = Column(String, ForeignKey("playlist.id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"), nullable=False)
     time_stamp = Column(DateTime, nullable=False, default=func.now())
     comment = Column(String(100), nullable=False)

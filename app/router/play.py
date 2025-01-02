@@ -6,8 +6,11 @@ from ..schemas.config import db_dependency, user_dependency
 from ..schemas.model import *
 from ..schemas.user_schemas import *
 import requests
+import logging
 
 play = APIRouter()
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
 def search_existing(track_id, track_list, track_id_list):
@@ -154,6 +157,8 @@ async def create_playlist(payload: PlaylistCreate,
         db.add(new)
         db.commit()
 
+        logging.info(f"User with id: {user.id} has created a public playlist with id: {playlist_id}")
+
         return {'message': 'Playlist created successfully'}
 
     else:
@@ -212,6 +217,8 @@ async def create_playlist_private(
 
         db.add(new)
         db.commit()
+
+        logging.info(f"User with id: {user.id} has created a private playlist with id: {playlist_id}")
 
         return {'message': 'Playlist created successfully'}
 
@@ -363,6 +370,8 @@ async def alter_playlist(payload: AddTrack,
         db.add(playlist)
         db.commit()
 
+        logging.info(f"The playlist: {playlist.id} has been altered by user: {user.id}")
+
         return {'message': 'Track added to playlist successfully'}
     else:
         raise HTTPException(status_code=add_track.status_code, detail=add_track.json())
@@ -431,6 +440,9 @@ async def remove_tracks(payload: AddTrack,
         playlist.users.append(user)
     db.add(playlist)
     db.commit()
+
+    logging.info(f"The playlist: {playlist.id} has been altered by user: {user.id}")
+
     return {'message': 'Tracks removed from the playlist successfully'}
 
 
@@ -479,6 +491,9 @@ async def remove_playlist(payload: AlterPlaylist,
 
         db.delete(playlist)
         db.commit()
+
+        logging.info(f"The playlist: {playlist.id} has been deleted by user: {user.id}")
+
         return {'message': 'Playlist deleted successfully'}
     else:
         raise HTTPException(status_code=remove.status_code, detail=remove.json())
