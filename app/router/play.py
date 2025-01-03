@@ -28,7 +28,8 @@ async def search_tracks_spotify(name: str,
         return RedirectResponse(url='/user/login')
 
     if check_expired_token(token):
-        token = await refresh_access_token(request)
+        await refresh_access_token(request)
+
 
     search_response = requests.get(
         'https://api.spotify.com/v1/search',
@@ -61,11 +62,16 @@ async def search_tracks_spotify(name: str,
 async def find_playlists(name: str,
                          user: user_dependency,
                          db: db_dependency,
+                         request: Request,
                          token: str | None = Cookie(None, alias="access_token")):
     if not user:
         return RedirectResponse(url='/user/login')
     if not token:
         return RedirectResponse(url='/user/login')
+
+    if check_expired_token(token):
+        token = await refresh_access_token(request)
+        token = token['access_token']
 
     playlist_search = db.query(Playlist).filter(
         (Playlist.name.ilike(f"%{name}%")) |
@@ -114,12 +120,17 @@ async def get_playlist_id(payload: AlterPlaylist,
 async def create_playlist(payload: PlaylistCreate,
                           user: user_dependency,
                           db: db_dependency,
+                          request: Request,
                           token: str | None = Cookie(None, alias="access_token"),
                           ):
     if not user:
         return RedirectResponse(url='/user/login')
     if not token:
         return RedirectResponse(url='/user/login')
+
+    if check_expired_token(token):
+        token = await refresh_access_token(request)
+        token = token['access_token']
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',

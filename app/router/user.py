@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Response, Request, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
-from ..schemas.config import db_dependency, user_dependency, authentication, welcome_email
+from ..schemas.config import db_dependency, user_dependency, authentication, welcome_email, check_expired_token
 from ..schemas.user_schemas import *
 from ..schemas.model import UserModel, Following
 from datetime import timedelta
@@ -145,11 +145,15 @@ def callback(request: Request, db: db_dependency):
 
 
 @user.get('/profile')
-def get_user_profile(db: db_dependency, user: user_dependency, token: str | None = Cookie(None, alias="access_token")):
+async def get_user_profile(db: db_dependency, user: user_dependency, request: Request, token: str | None = Cookie(None, alias="access_token")):
     if not user:
         return RedirectResponse(url='/user/login')
     if not token:
         return RedirectResponse(url='/user/login')
+
+    if check_expired_token(token):
+        response = await refresh_access_token(request)
+        token = response.cookies.get('access_token')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -182,7 +186,8 @@ def get_user_profile(db: db_dependency, user: user_dependency, token: str | None
 
         }
 
-        return profile
+        response = JSONResponse({'profile': profile})
+        return response
     else:
         raise HTTPException(status_code=user_info.status_code, detail='Failed to verify access token')
 
@@ -218,7 +223,7 @@ async def refresh_access_token(request: Request):
             samesite='lax'
         )
 
-        return access_token
+        return response
     else:
         raise HTTPException(status_code=new_access_token.status_code, detail='Failed to get refresh token ')
 
