@@ -152,8 +152,7 @@ async def get_user_profile(db: db_dependency, user: user_dependency, request: Re
         return RedirectResponse(url='/user/login')
 
     if check_expired_token(token):
-        response = await refresh_access_token(request)
-        token = response.cookies.get('access_token')
+        return await refresh_access_token(request, url='/user/profile')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -186,14 +185,13 @@ async def get_user_profile(db: db_dependency, user: user_dependency, request: Re
 
         }
 
-        response = JSONResponse({'profile': profile})
-        return response
+        return JSONResponse({'profile': profile})
     else:
         raise HTTPException(status_code=user_info.status_code, detail='Failed to verify access token')
 
 
 @user.get('/refresh_token')
-async def refresh_access_token(request: Request):
+async def refresh_access_token(request: Request, url: str):
     refresh_token = request.cookies.get('refresh_token')
     if not refresh_token:
         return RedirectResponse(url='/user/login')
@@ -213,7 +211,7 @@ async def refresh_access_token(request: Request):
         token_info = new_access_token.json()
         access_token = token_info['access_token']
 
-        response = JSONResponse(content={'message': 'Access Token Refreshed Successfully'})
+        response = RedirectResponse(url=url)
         response.set_cookie(
             key='access_token',
             value=access_token,
