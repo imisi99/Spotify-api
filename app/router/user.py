@@ -69,10 +69,8 @@ def callback(request: Request, db: db_dependency):
 
     if token_request.status_code == 200:
         token_info = token_request.json()
-        request.session["access_token"] = token_info['access_token']
-        request.session["refresh_token"] = token_info['refresh_token']
-        refresh_token = request.session.get('access_token')
-        token = request.session.get('access_token')
+        token = token_info['access_token']
+        refresh_token = token_info['refresh_token']
 
         user_info = requests.get(
             'https://api.spotify.com/v1/me',
