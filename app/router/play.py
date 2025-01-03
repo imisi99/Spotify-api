@@ -14,22 +14,15 @@ play = APIRouter()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 
-def search_existing(track_id, track_list, track_id_list):
-    if track_id in track_list:
-        track_id_list.remove(track_id)
-    return track_id_list
-
-
 @play.get('/search')
 async def search_tracks_spotify(name: str,
                                 request: Request,
+                                user: user_dependency,
                                 token: str | None = Cookie(None, alias="access_token")):
-    if not token:
+    if not token or not user:
         return RedirectResponse(url='/user/login')
-
     if check_expired_token(token):
-        await refresh_access_token(request)
-
+        await refresh_access_token(request, url='/play/search')
 
     search_response = requests.get(
         'https://api.spotify.com/v1/search',
@@ -64,14 +57,10 @@ async def find_playlists(name: str,
                          db: db_dependency,
                          request: Request,
                          token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='/user/login')
-    if not token:
-        return RedirectResponse(url='/user/login')
-
     if check_expired_token(token):
-        token = await refresh_access_token(request)
-        token = token['access_token']
+        return await refresh_access_token(request, url='/play/playlists/search')
 
     playlist_search = db.query(Playlist).filter(
         (Playlist.name.ilike(f"%{name}%")) |
@@ -123,14 +112,10 @@ async def create_playlist(payload: PlaylistCreate,
                           request: Request,
                           token: str | None = Cookie(None, alias="access_token"),
                           ):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='/user/login')
-    if not token:
-        return RedirectResponse(url='/user/login')
-
     if check_expired_token(token):
-        token = await refresh_access_token(request)
-        token = token['access_token']
+        return await refresh_access_token(request, url='/play/create')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -186,11 +171,12 @@ async def create_playlist_private(
         payload: PlaylistPrivateCreate,
         user: user_dependency,
         db: db_dependency,
+        request: Request,
         token: str | None = Cookie(None, alias="access_token")):
-    if not token:
+    if not token or not user:
         return RedirectResponse(url='user/login')
-    if not user:
-        return RedirectResponse(url='user/login')
+    if check_expired_token(token):
+        return await refresh_access_token(request, url='/play/create/private')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -246,11 +232,12 @@ async def create_playlist_private(
 async def private_to_public(payload: AlterPlaylist,
                             user: user_dependency,
                             db: db_dependency,
+                            request: Request,
                             token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='user/login')
-    if not token:
-        return RedirectResponse(url='user/login')
+    if check_expired_token(token):
+        return await refresh_access_token(request, url='/play/make_public')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -261,8 +248,6 @@ async def private_to_public(payload: AlterPlaylist,
 
     if user_info.status_code != 200:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Failed to verify access token')
-
-    # getting playlist id from db
 
     playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     if not playlist:
@@ -288,13 +273,13 @@ async def private_to_public(payload: AlterPlaylist,
 async def public_to_private(payload: AlterPlaylist,
                             user: user_dependency,
                             db: db_dependency,
+                            request: Request,
                             token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='/user/login')
-    if not token:
-        return RedirectResponse(url='/user/login')
+    if check_expired_token(token):
+        return await refresh_access_token(request, url='/play/make_private')
 
-    # validating token with spotify
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
         headers={'Authorization': f'Bearer {token}'}
@@ -327,13 +312,13 @@ async def public_to_private(payload: AlterPlaylist,
 async def alter_playlist(payload: AddTrack,
                          user: user_dependency,
                          db: db_dependency,
+                         request: Request,
                          token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='/user/login')
-    if not token:
-        return RedirectResponse(url='/user/login')
+    if check_expired_token(token):
+        return await refresh_access_token(request, url='/play/alter')
 
-    # validating token with spotify
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
         headers={'Authorization': f'Bearer {token}'}
@@ -397,11 +382,12 @@ async def alter_playlist(payload: AddTrack,
 async def remove_tracks(payload: AddTrack,
                         user: user_dependency,
                         db: db_dependency,
+                        request: Request,
                         token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='user/login')
-    if not token:
-        return RedirectResponse(url='user/login')
+    if check_expired_token(token):
+        return await refresh_access_token(request, url='/play/alter/d')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -466,11 +452,12 @@ async def remove_tracks(payload: AddTrack,
 async def remove_playlist(payload: AlterPlaylist,
                           user: user_dependency,
                           db: db_dependency,
+                          request: Request,
                           token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='/user/login')
-    if not token:
-        return RedirectResponse(url='/user/login')
+    if check_expired_token(token):
+        return await refresh_access_token(request, url='/play/remove/track')
 
     playlist = db.query(Playlist).filter(Playlist.id == payload.id).first()
     if not playlist:
@@ -519,11 +506,12 @@ async def remove_playlist(payload: AlterPlaylist,
 async def listen(payload: Listen,
                  user: user_dependency,
                  db: db_dependency,
+                 request: Request,
                  token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='/user/login')
-    if not token:
-        return RedirectResponse(url='/user/login')
+    if check_expired_token(token):
+        return await refresh_access_token(request, url='/play/listen')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',

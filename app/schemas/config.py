@@ -51,8 +51,7 @@ async def get_user(db: db_dependency, token: str | None = Cookie(None, alias="jw
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                 detail="Invalid Token, please login again")
         if exp and datetime.utcnow() > exp:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZEDT,
-                                detail="Session Expired, please login again")
+            return RedirectResponse(url='/user/login')
 
         user = db.query(UserModel).filter(UserModel.id == user_id).first()
         if user is None:

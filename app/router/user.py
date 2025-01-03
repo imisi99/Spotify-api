@@ -109,9 +109,7 @@ def callback(request: Request, db: db_dependency):
         get_user_data = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
         jwt_token = authentication(get_user_data.id, get_user_data.username, timedelta(days=30))
 
-        response = JSONResponse(content={
-            'message': 'User successfully logged in.'
-        })
+        response = RedirectResponse(url='/')
 
         response.set_cookie(
             key='jwt_token',
@@ -146,11 +144,8 @@ def callback(request: Request, db: db_dependency):
 
 @user.get('/profile')
 async def get_user_profile(db: db_dependency, user: user_dependency, request: Request, token: str | None = Cookie(None, alias="access_token")):
-    if not user:
+    if not user or not token:
         return RedirectResponse(url='/user/login')
-    if not token:
-        return RedirectResponse(url='/user/login')
-
     if check_expired_token(token):
         return await refresh_access_token(request, url='/user/profile')
 
@@ -287,7 +282,6 @@ async def unfollow_user(payload: UserID,
 @user.delete('/delete/account')
 def delete_account(user: user_dependency,
                    db: db_dependency,
-                   response: Response,
                    message: str):
     if not user:
         return RedirectResponse(url='/user/login')
@@ -303,10 +297,11 @@ def delete_account(user: user_dependency,
     db.commit()
 
     logging.info(f"User account with id: {user_acc.id} and username: {user_acc.username} has been deleted.")
-
+    response = RedirectResponse(url='/', status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie('jwt_token')
     response.delete_cookie('access_token')
-    return RedirectResponse(url='/', status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie('refresh_token')
+    return response
 
 
 @user.get('/logout')
@@ -314,4 +309,5 @@ def logout():
     response = RedirectResponse(url='/')
     response.delete_cookie('jwt_token')
     response.delete_cookie('access_token')
+    response.delete_cookie('refresh_token')
     return response
