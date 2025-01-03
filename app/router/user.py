@@ -220,7 +220,7 @@ async def refresh_access_token(request: Request):
 
         return access_token
     else:
-        raise HTTPException(status_code=new_access_token.status_code, detail='Failed to refresh access token')
+        raise HTTPException(status_code=new_access_token.status_code, detail=new_access_token.json())
 
 
 @user.put('/follow')
