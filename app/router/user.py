@@ -193,7 +193,7 @@ async def refresh_access_token(request: Request):
     if not refresh_token:
         return RedirectResponse(url='/user/login')
 
-    new_access_token = requests.get(
+    new_access_token = requests.post(
         'https://accounts.spotify.com/api/token',
         data={
             'grant_type': 'refresh_token',
@@ -201,7 +201,7 @@ async def refresh_access_token(request: Request):
             'client_id': client_id,
             'client_secret': client_secret
         },
-        headers={'content-type': 'application/x-www-form-urlencoded'}
+        headers={'Content-Type': 'application/x-www-form-urlencoded'}
     )
 
     if new_access_token.status_code == 200:
@@ -220,7 +220,7 @@ async def refresh_access_token(request: Request):
 
         return access_token
     else:
-        raise HTTPException(status_code=new_access_token.status_code, detail=new_access_token.json())
+        raise HTTPException(status_code=new_access_token.status_code, detail='Failed to get refresh token ')
 
 
 @user.put('/follow')
