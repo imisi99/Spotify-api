@@ -23,7 +23,7 @@ async def search_tracks_spotify(name: str,
     if not token or not user:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
-        return await refresh_access_token(request, url=f'/play/search?name={name}')
+        return await refresh_access_token(request, val=None, url=f'/play/search?name={name}')
 
     search_response = requests.get(
         'https://api.spotify.com/v1/search',
@@ -61,7 +61,7 @@ async def find_playlists(name: str,
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
-        return await refresh_access_token(request, url=f'/play/playlists/search?name={name}')
+        return await refresh_access_token(request, val=None, url=f'/play/playlists/search?name={name}')
 
     playlist_search = db.query(Playlist).filter(
         (Playlist.name.ilike(f"%{name}%")) |
@@ -120,7 +120,7 @@ async def create_playlist(payload: PlaylistCreate,
         return await refresh_access_token(request, val=val, url='/play/create')
     if request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
-        payload = AlterPlaylist(**(json.loads(payload_j)))
+        payload = PlaylistCreate(**(json.loads(payload_j)))
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -186,7 +186,7 @@ async def create_playlist_private(
 
     if request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
-        payload = AlterPlaylist(**(json.loads(payload_j)))
+        payload = PlaylistPrivateCreate(**(json.loads(payload_j)))
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -342,7 +342,7 @@ async def alter_playlist(payload: AddTrack,
 
     if request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
-        payload = AlterPlaylist(**(json.loads(payload_j)))
+        payload = AddTrack(**(json.loads(payload_j)))
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -417,7 +417,7 @@ async def remove_tracks(payload: AddTrack,
 
     if request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
-        payload = AlterPlaylist(**(json.loads(payload_j)))
+        payload = AddTrack(**(json.loads(payload_j)))
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -551,7 +551,7 @@ async def listen(payload: Listen,
 
     if request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
-        payload = AlterPlaylist(**(json.loads(payload_j)))
+        payload = Listen(**(json.loads(payload_j)))
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
