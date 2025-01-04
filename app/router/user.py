@@ -186,7 +186,7 @@ async def get_user_profile(db: db_dependency, user: user_dependency, request: Re
 
 
 @user.get('/refresh_token')
-async def refresh_access_token(request: Request, url: str):
+async def refresh_access_token(request: Request, val, url):
     refresh_token = request.cookies.get('refresh_token')
     if not refresh_token:
         return RedirectResponse(url='/user/login')
@@ -211,6 +211,15 @@ async def refresh_access_token(request: Request, url: str):
             key='access_token',
             value=access_token,
             max_age=60 * 60 * 24 * 30,
+            httponly=True,
+            secure=True,
+            samesite='lax'
+        )
+
+        response.set_cookie(
+            key='payload',
+            value=val,
+            max_age=60 * 1,
             httponly=True,
             secure=True,
             samesite='lax'
