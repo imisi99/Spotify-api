@@ -546,12 +546,12 @@ async def listen(payload: Listen,
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
-        val = json.dumps(payload.dict())
-        return await refresh_access_token(request, val=val, url='/play/listen')
+        # val = json.dumps(payload.dict())
+        return await refresh_access_token(request, val=None, url='/play/listen')
 
-    if request.cookies.get('payload'):
-        payload_j = request.cookies.get('payload')
-        payload = Listen(**(json.loads(payload_j)))
+    # if request.cookies.get('payload'):
+    #     payload_j = request.cookies.get('payload')
+    #     payload = Listen(**(json.loads(payload_j)))
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -641,6 +641,9 @@ async def get_discussion(payload: AlterPlaylist,
                          db: db_dependency):
     if not user:
         return RedirectResponse(url='/user/login')
+
+    if not db.query(Playlist).filter(Playlist.id == payload.id).first():
+        return {'message': 'Playlist not found'}
 
     discussion = db.query(Discussion).filter(Discussion.playlist_id == payload.id).order_by(
         asc(Discussion.time_stamp)).all()

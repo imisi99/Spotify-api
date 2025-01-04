@@ -219,7 +219,7 @@ async def refresh_access_token(request: Request, val, url):
             response.set_cookie(
                 key='payload',
                 value=val,
-                max_age=60 * 1,
+                max_age=60,
                 httponly=True,
                 secure=True,
                 samesite='lax'
