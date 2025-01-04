@@ -147,7 +147,7 @@ async def get_user_profile(db: db_dependency, user: user_dependency, request: Re
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
-        return await refresh_access_token(request, url='/user/profile')
+        return await refresh_access_token(request, val=None, url='/user/profile')
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
@@ -215,15 +215,15 @@ async def refresh_access_token(request: Request, val, url):
             secure=True,
             samesite='lax'
         )
-
-        response.set_cookie(
-            key='payload',
-            value=val,
-            max_age=60 * 1,
-            httponly=True,
-            secure=True,
-            samesite='lax'
-        )
+        if val is not None:
+            response.set_cookie(
+                key='payload',
+                value=val,
+                max_age=60 * 1,
+                httponly=True,
+                secure=True,
+                samesite='lax'
+            )
 
         return response
     else:
