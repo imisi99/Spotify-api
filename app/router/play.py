@@ -107,18 +107,19 @@ async def get_playlist_id(payload: AlterPlaylist,
 
 
 @play.post('/create')
-async def create_playlist(payload: PlaylistCreate,
-                          user: user_dependency,
+async def create_playlist(user: user_dependency,
                           db: db_dependency,
                           request: Request,
                           token: str | None = Cookie(None, alias="access_token"),
+                          payload: PlaylistCreate | None = None
                           ):
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
         val = json.dumps(payload.dict())
         return await refresh_access_token(request, val=val, url='/play/create')
-    if request.cookies.get('payload'):
+
+    if payload is None and request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
         payload = PlaylistCreate(**(json.loads(payload_j)))
 
@@ -173,18 +174,19 @@ async def create_playlist(payload: PlaylistCreate,
 
 @play.post('/create/private')
 async def create_playlist_private(
-        payload: PlaylistPrivateCreate,
         user: user_dependency,
         db: db_dependency,
         request: Request,
-        token: str | None = Cookie(None, alias="access_token")):
+        token: str | None = Cookie(None, alias="access_token"),
+        payload: PlaylistPrivateCreate | None = None
+):
     if not token or not user:
         return RedirectResponse(url='user/login')
     if check_expired_token(token):
         val = json.dumps(payload.dict())
         return await refresh_access_token(request, val=val, url='/play/create/private')
 
-    if request.cookies.get('payload'):
+    if payload is None and request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
         payload = PlaylistPrivateCreate(**(json.loads(payload_j)))
 
@@ -239,18 +241,18 @@ async def create_playlist_private(
 
 
 @play.put('/make_public')
-async def private_to_public(payload: AlterPlaylist,
-                            user: user_dependency,
+async def private_to_public(user: user_dependency,
                             db: db_dependency,
                             request: Request,
-                            token: str | None = Cookie(None, alias="access_token")):
+                            token: str | None = Cookie(None, alias="access_token"),
+                            payload: AlterPlaylist | None = None):
     if not user or not token:
         return RedirectResponse(url='user/login')
     if check_expired_token(token):
         val = json.dumps(payload.dict())
         return await refresh_access_token(request, val=val, url='/play/make_public')
 
-    if request.cookies.get('payload'):
+    if payload is None and request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
         payload = AlterPlaylist(**(json.loads(payload_j)))
 
@@ -285,18 +287,18 @@ async def private_to_public(payload: AlterPlaylist,
 
 
 @play.put('/make_private')
-async def public_to_private(payload: AlterPlaylist,
-                            user: user_dependency,
+async def public_to_private(user: user_dependency,
                             db: db_dependency,
                             request: Request,
-                            token: str | None = Cookie(None, alias="access_token")):
+                            token: str | None = Cookie(None, alias="access_token"),
+                            payload: AlterPlaylist | None = None):
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
         val = json.dumps(payload.dict())
         return await refresh_access_token(request, val=val, url='/play/make_private')
 
-    if request.cookies.get('payload'):
+    if payload is None and request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
         payload = AlterPlaylist(**(json.loads(payload_j)))
 
@@ -329,18 +331,18 @@ async def public_to_private(payload: AlterPlaylist,
 
 
 @play.put('/alter')
-async def alter_playlist(payload: AddTrack,
-                         user: user_dependency,
+async def alter_playlist(user: user_dependency,
                          db: db_dependency,
                          request: Request,
-                         token: str | None = Cookie(None, alias="access_token")):
+                         token: str | None = Cookie(None, alias="access_token"),
+                         payload: AddTrack | None = None):
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
         val = json.dumps(payload.dict())
         return await refresh_access_token(request, val=val, url='/play/alter')
 
-    if request.cookies.get('payload'):
+    if payload is None and request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
         payload = AddTrack(**(json.loads(payload_j)))
 
@@ -404,18 +406,18 @@ async def alter_playlist(payload: AddTrack,
 
 
 @play.put('/alter/d')
-async def remove_tracks(payload: AddTrack,
-                        user: user_dependency,
+async def remove_tracks(user: user_dependency,
                         db: db_dependency,
                         request: Request,
-                        token: str | None = Cookie(None, alias="access_token")):
+                        token: str | None = Cookie(None, alias="access_token"),
+                        payload: AddTrack | None = None):
     if not user or not token:
         return RedirectResponse(url='user/login')
     if check_expired_token(token):
         val = json.dumps(payload.dict())
         return await refresh_access_token(request, val=val, url='/play/alter/d')
 
-    if request.cookies.get('payload'):
+    if payload is None and request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
         payload = AddTrack(**(json.loads(payload_j)))
 
@@ -479,18 +481,18 @@ async def remove_tracks(payload: AddTrack,
 
 
 @play.delete('/remove/track')
-async def remove_playlist(payload: AlterPlaylist,
-                          user: user_dependency,
+async def remove_playlist(user: user_dependency,
                           db: db_dependency,
                           request: Request,
-                          token: str | None = Cookie(None, alias="access_token")):
+                          token: str | None = Cookie(None, alias="access_token"),
+                          payload: AlterPlaylist | None = None):
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
         val = json.dumps(payload.dict())
         return await refresh_access_token(request, val=val, url='/play/remove/track')
 
-    if request.cookies.get('payload'):
+    if payload is None and request.cookies.get('payload'):
         payload_j = request.cookies.get('payload')
         payload = AlterPlaylist(**(json.loads(payload_j)))
 
@@ -538,20 +540,20 @@ async def remove_playlist(payload: AlterPlaylist,
 
 
 @play.get('/listen')
-async def listen(payload: Listen,
-                 user: user_dependency,
+async def listen(user: user_dependency,
                  db: db_dependency,
                  request: Request,
-                 token: str | None = Cookie(None, alias="access_token")):
+                 token: str | None = Cookie(None, alias="access_token"),
+                 payload: Listen | None = None):
     if not user or not token:
         return RedirectResponse(url='/user/login')
     if check_expired_token(token):
-        # val = json.dumps(payload.dict())
-        return await refresh_access_token(request, val=None, url='/play/listen')
+        val = json.dumps(payload.dict()) if payload else None
+        return await refresh_access_token(request, val=val, url='/play/listen')
 
-    # if request.cookies.get('payload'):
-    #     payload_j = request.cookies.get('payload')
-    #     payload = Listen(**(json.loads(payload_j)))
+    if payload is None and request.cookies.get('payload'):
+        payload_j = request.cookies.get('payload')
+        payload = Listen(**(json.loads(payload_j)))
 
     user_info = requests.get(
         'https://api.spotify.com/v1/me',
