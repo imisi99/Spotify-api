@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Response, Request, Cookie
+from fastapi import APIRouter, HTTPException, Request, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
