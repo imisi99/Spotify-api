@@ -39,7 +39,6 @@ for i in range(100):
 
 'done'
 
-@st.cache_data
 def page_view():
     if "counter" not in st.session_state:
         st.session_state.counter = 0

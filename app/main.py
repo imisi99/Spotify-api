@@ -15,7 +15,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://imisi99-spotify-api-frontendapp-fkv1np.streamlit.app/"],
+    allow_origins=["https://imisi99-spotify-api-frontendapp-fkv1np.streamlit.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
