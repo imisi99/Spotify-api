@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, Cookie
+from fastapi import APIRouter, HTTPException, Request, Cookie, FastAPI
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
@@ -114,27 +114,27 @@ def callback(request: Request, db: db_dependency):
         response.set_cookie(
             key='jwt_token',
             value=jwt_token,
-            httponly=True,
+            httponly=False,
             max_age=60 * 60 * 24 * 30,
-            secure=True,
-            samesite='lax'
+            secure=False,
+            samesite=None
         )
         response.set_cookie(
             key='access_token',
             value=token,
             max_age=60 * 60 * 24 * 30,
-            httponly=True,
-            secure=True,
-            samesite='lax'
+            httponly=False,
+            secure=False,
+            samesite=None
         )
 
         response.set_cookie(
             key='refresh_token',
             value=refresh_token,
             max_age=60 * 60 * 24 * 30,
-            httponly=True,
-            secure=True,
-            samesite='lax'
+            httponly=False,
+            secure=False,
+            samesite=None
         )
 
         return response
