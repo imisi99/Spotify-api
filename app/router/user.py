@@ -109,7 +109,7 @@ def callback(request: Request, db: db_dependency):
         get_user_data = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
         jwt_token = authentication(get_user_data.id, get_user_data.username, timedelta(days=30))
 
-        response = RedirectResponse(url='https://imisi99-spotify-api-frontendapp-fkv1np.streamlit.app/dashboard')
+        response = RedirectResponse(url='/')
 
         response.set_cookie(
             key='jwt_token',
