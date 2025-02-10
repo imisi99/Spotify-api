@@ -142,6 +142,9 @@ def callback(request: Request, db: db_dependency):
         raise HTTPException(status_code=token_request.status_code, detail='failed to fetch access token')
 
 
+@user.get('/get_cookies')
+async def get_cookies():
+    cookie = 
 @user.get('/profile')
 async def get_user_profile(db: db_dependency, user: user_dependency, request: Request, token: str | None = Cookie(None, alias="access_token")):
     if not user or not token:
