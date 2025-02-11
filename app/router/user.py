@@ -143,8 +143,15 @@ def callback(request: Request, db: db_dependency):
 
 
 @user.get('/get_cookies')
-async def get_cookies():
-    cookie = 
+async def get_cookies(request: Request, user: user_dependency):
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    access_token = request.cookies.get('access_token')
+    refresh_token = request.cookies.get('refresh_token')
+    jwt_token = request.cookies.get('jwt_token')
+    return {"access_token": access_token, "refresh_token": refresh_token, "jwt_token": jwt_token}
+
+
 @user.get('/profile')
 async def get_user_profile(db: db_dependency, user: user_dependency, request: Request, token: str | None = Cookie(None, alias="access_token")):
     if not user or not token:
