@@ -125,7 +125,7 @@ def callback(request: Request, db: db_dependency):
             max_age=60 * 60 * 24 * 30,
             httponly=False,
             secure=False,
-            samesite=None
+            samesite='lax'
         )
 
         response.set_cookie(
@@ -134,7 +134,7 @@ def callback(request: Request, db: db_dependency):
             max_age=60 * 60 * 24 * 30,
             httponly=False,
             secure=False,
-            samesite=None
+            samesite='lax'
         )
 
         return response
@@ -148,8 +148,10 @@ async def get_cookies(request: Request, user: user_dependency):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     access_token = request.cookies.get('access_token')
     refresh_token = request.cookies.get('refresh_token')
-    jwt_token = request.cookies.get('jwt_token')
-    return {"access_token": access_token, "refresh_token": refresh_token, "jwt_token": jwt_token}
+    if access_token and refresh_token:
+        return {'access_token': access_token, 'refresh_token': refresh_token}
+    else:
+        return "Failed to fetch access token and refresh token"
 
 
 @user.get('/profile')
