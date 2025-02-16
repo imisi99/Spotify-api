@@ -160,7 +160,7 @@ async def get_cookies(request: Request, user: user_dependency):
 async def get_user_profile(db: db_dependency, user: user_dependency, request: Request):
     token = request.cookies.get('access_token')
     if not user or not token:
-        return RedirectResponse(url='/user/login')
+        return {"message": "failed to fetch user info", "token": token, "user": user}
     if check_expired_token(token):
         return await refresh_access_token(request, val=None, url='/user/profile')
 
