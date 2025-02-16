@@ -132,7 +132,7 @@ def callback(request: Request, db: db_dependency):
             key='refresh_token',
             value=refresh_token,
             max_age=60 * 60 * 24 * 30,
-            httponly=False
+            httponly=False,
             secure=True,
             samesite="none"
         )
