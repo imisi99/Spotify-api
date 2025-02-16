@@ -109,7 +109,7 @@ def callback(request: Request, db: db_dependency):
         get_user_data = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
         jwt_token = authentication(get_user_data.id, get_user_data.username, timedelta(days=30))
 
-        response = RedirectResponse(url='https://imisi99-spotify-api-frontendapp-fkv1np.streamlit.app')
+        response = RedirectResponse(url='https://dashie23.streamlit.app')
 
         response.set_cookie(
             key='jwt_token',
@@ -223,7 +223,7 @@ async def refresh_access_token(request: Request, val, url):
             key='access_token',
             value=access_token,
             max_age=60 * 60 * 24 * 30,
-            httponly=True,
+            httponly=False,
             secure=True,
             samesite='none'
         )
@@ -232,7 +232,7 @@ async def refresh_access_token(request: Request, val, url):
                 key='payload',
                 value=val,
                 max_age=60,
-                httponly=True,
+                httponly=False,
                 secure=True,
                 samesite='none'
             )
