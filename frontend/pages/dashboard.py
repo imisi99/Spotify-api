@@ -1,12 +1,9 @@
 import streamlit as st
-import httpx
+import requests
 
-p_uri = "http://localhost:8000/user/get_cookies"
+p_uri = "https://spotify-dv92.onrender.com/user/get_cookies"
 
-with httpx.Client() as session:
-    response = session.get(p_uri)
-    try:
-        st.write(response.json())
-    except httpx.HTTPStatusError:
-        st.write({"error": "Could not get details", "status_code": response.status_code, "test": response.text})
-
+session = requests.Session()
+response = session.get(p_uri)
+st.link_button('get_cookie', p_uri)
+st.write(response.json())

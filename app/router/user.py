@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, Cookie, FastAPI
+from fastapi import APIRouter, HTTPException, Request, Cookie
 from fastapi.responses import RedirectResponse, JSONResponse
 from starlette import status
 from dotenv import load_dotenv
@@ -109,23 +109,23 @@ def callback(request: Request, db: db_dependency):
         get_user_data = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
         jwt_token = authentication(get_user_data.id, get_user_data.username, timedelta(days=30))
 
-        response = RedirectResponse(url='http://localhost:8501')
+        response = RedirectResponse(url='https://imisi99-spotify-api-frontendapp-fkv1np.streamlit.app')
 
         response.set_cookie(
             key='jwt_token',
             value=jwt_token,
             httponly=False,
             max_age=60 * 60 * 24 * 30,
-            secure=False,
-            samesite=None
+            secure=True,
+            samesite="none"
         )
         response.set_cookie(
             key='access_token',
             value=token,
             max_age=60 * 60 * 24 * 30,
             httponly=False,
-            secure=False,
-            samesite='lax'
+            secure=True,
+            samesite="none"
         )
 
         response.set_cookie(
@@ -133,8 +133,8 @@ def callback(request: Request, db: db_dependency):
             value=refresh_token,
             max_age=60 * 60 * 24 * 30,
             httponly=False,
-            secure=False,
-            samesite='lax'
+            secure=True,
+            samesite="none"
         )
 
         return response
@@ -143,15 +143,15 @@ def callback(request: Request, db: db_dependency):
 
 
 @user.get('/get_cookies')
-async def get_cookies(request: Request, user: user_dependency):
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+async def get_cookies(request: Request):
     access_token = request.cookies.get('access_token')
     refresh_token = request.cookies.get('refresh_token')
+
+    print(f"Access Token: {access_token}, Refresh Token: {refresh_token}")
     if access_token and refresh_token:
         return {'access_token': access_token, 'refresh_token': refresh_token}
     else:
-        return "Failed to fetch access token and refresh token"
+        return "Failed to fetch access token and token"
 
 
 @user.get('/profile')
@@ -225,7 +225,7 @@ async def refresh_access_token(request: Request, val, url):
             max_age=60 * 60 * 24 * 30,
             httponly=True,
             secure=True,
-            samesite='lax'
+            samesite='none'
         )
         if val is not None:
             response.set_cookie(
@@ -234,7 +234,7 @@ async def refresh_access_token(request: Request, val, url):
                 max_age=60,
                 httponly=True,
                 secure=True,
-                samesite='lax'
+                samesite='none'
             )
 
         return response
