@@ -1,0 +1,16 @@
+services:
+  - name: dashie
+    type: web
+    env: docker
+    repo: https://github.com/imisi99/Spotify-api
+    region: oregon
+    plan: free
+    healthCheckPath: /docs
+    autoDeploy: true
+
+  - name: db
+    type: private
+    env: docker
+    image: postgres:latest
+    region: oregon
+    plan: free
