@@ -12,6 +12,6 @@ services:
     type: pserv
     env: docker
     image:
-      url: docker.io/imisi99/dahie-db
+      url: docker.io/imisi99/dashie-db
     region: oregon
     plan: free
