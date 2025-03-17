@@ -12,7 +12,6 @@ services:
   - name: db
     type: pserv
     env: docker
-    image:
-      uri: docker.io/library/postgres:latest
+    image: docker.io/library/postgres:latest
     region: oregon
     plan: free
