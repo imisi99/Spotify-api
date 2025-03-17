@@ -17,8 +17,8 @@ jobs:
 
       - name: Build and push to docker hub
         run: |
-          docker build -t imisi/dashie:latest .
-          docker push imisi/dashie:latest
+          docker build -t imisi99/dashie:latest .
+          docker push imisi99/dashie:latest
 
   deploy:
     needs: build-and-push
