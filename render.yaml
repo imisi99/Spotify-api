@@ -11,6 +11,7 @@ services:
   - name: db
     type: pserv
     env: docker
-    image: postgres:latest
+    image:
+      url: docker.io/imisi99/dahie-db
     region: oregon
     plan: free
