@@ -9,7 +9,7 @@ services:
     autoDeploy: true
 
   - name: db
-    type: private
+    type: pserv
     env: docker
     image: postgres:latest
     region: oregon
