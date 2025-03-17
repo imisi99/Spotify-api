@@ -2,6 +2,7 @@ services:
   - name: dashie
     type: web
     env: docker
+    dockerfilePath: ./Dockerfile
     repo: https://github.com/imisi99/Spotify-api
     region: oregon
     plan: free
@@ -12,6 +13,6 @@ services:
     type: pserv
     env: docker
     image:
-      url: docker.io/imisi99/dashie-db
+      uri: docker.io/library/postgres:latest
     region: oregon
     plan: free
