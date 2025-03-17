@@ -109,7 +109,7 @@ def callback(request: Request, db: db_dependency):
         get_user_data = db.query(UserModel).filter(UserModel.email == user_data.get('email')).first()
         jwt_token = authentication(get_user_data.id, get_user_data.username, timedelta(days=30))
 
-        response = RedirectResponse(url='https://dashie23.streamlit.app')
+        response = RedirectResponse(url='https://dashie-l97z.onrender.com/user/profile')
 
         response.set_cookie(
             key='jwt_token',
@@ -132,7 +132,6 @@ def callback(request: Request, db: db_dependency):
             key='refresh_token',
             value=refresh_token,
             max_age=60 * 60 * 24 * 30,
-            domain="dashie23.streamlit.app",
             httponly=False,
             secure=True,
             samesite="none"

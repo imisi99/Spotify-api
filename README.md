@@ -7,4 +7,4 @@ It aims to bring people together with music, It's a platform where users can not
     - Everyone has a thought to share about a playlist, this allows users to discuss their favorite playlist and also rate it 
     - The most played and rated playlist at the end of every week will be recognized        
     
-The api was built using FastAPI all the endpoints can be viewed using the docs [here](https://spotify-dv92.onrender.com/docs) users can [log in](https://spotify-dv92.onrender.com/user/login) via their spotify account 
+The api was built using FastAPI all the endpoints can be viewed using the docs [here](https://dashie-l97z.onrender.com/docs) users can [log in](https://dashie-l97z.onrender.com/user/login) via their spotify account 
