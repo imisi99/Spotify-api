@@ -1,0 +1,29 @@
+name: Deploy on Render
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Log in to Docker
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | dcoker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build and push to docker hub
+        run: |
+          docker build -t . imisi/dashie:latest .
+          docker push imisi/dashie:latest
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger render deployment
+        run: Curl -X POST "${{ secrets.RENDER_HOOK }}"
