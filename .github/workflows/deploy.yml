@@ -26,4 +26,4 @@ jobs:
 
     steps:
       - name: Trigger render deployment
-        run: Curl -X POST "${{ secrets.RENDER_HOOK }}"
+        run: curl -X POST "${{ secrets.RENDER_HOOK }}"
